@@ -4774,7 +4774,7 @@ dependencies = [
 
 [[package]]
 name = "spine_bevy"
-version = "0.2.1"
+version = "0.2.2"
 dependencies = [
  "bevy",
  "serde",
@@ -4784,7 +4784,7 @@ dependencies = [
 
 [[package]]
 name = "spine_runtime"
-version = "0.2.1"
+version = "0.2.2"
 dependencies = [
  "glam",
  "serde_json",
