@@ -48,8 +48,6 @@ so the first version is published by hand, after `spine_runtime` 0.2.
 3. On crates.io → `spine_bevy` → Settings → Trusted Publishing, add a GitHub
    publisher: repository `dead-money/spine_bevy`, workflow `release.yml`,
    environment blank.
-4. Switch the README's Quick start from git dependencies to versions, and add
-   crates.io and docs.rs badges.
 
 ## Later releases
 
