@@ -31,7 +31,7 @@ use bevy::pbr::MeshMaterial3d;
 use bevy::prelude::*;
 use bevy::sprite_render::MeshMaterial2d;
 
-use dm_spine_runtime::render::RenderCommand;
+use spine_runtime::render::RenderCommand;
 
 use crate::asset::SpineAtlasAsset;
 use crate::components::{SpineRender2d, SpineRender3d, SpineSkeleton, SpineSkeletonState};
@@ -303,7 +303,7 @@ pub(crate) fn write_mesh_from_command(mesh: &mut Mesh, cmd: &RenderCommand) {
 
 /// Unpack a spine-runtime `0xAARRGGBB` color into a `[0..1]^4` RGBA Vec4.
 /// The light-color channel is already pre-multiplied by alpha on the CPU
-/// side (see `pack_color` in `dm_spine_runtime::render`).
+/// side (see `pack_color` in `spine_runtime::render`).
 pub(crate) fn unpack_argb(v: u32) -> Vec4 {
     let a = ((v >> 24) & 0xff) as f32 / 255.0;
     let r = ((v >> 16) & 0xff) as f32 / 255.0;

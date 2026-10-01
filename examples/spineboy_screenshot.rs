@@ -22,7 +22,7 @@
 use bevy::asset::AssetPlugin;
 use bevy::prelude::*;
 
-use dm_spine_bevy::{SpinePlugin, SpineSkeleton, SpineSkeletonAsset, SpineSkeletonLoaderSettings};
+use spine_bevy::{SpinePlugin, SpineSkeleton, SpineSkeletonAsset, SpineSkeletonLoaderSettings};
 
 mod common;
 

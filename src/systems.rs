@@ -29,11 +29,11 @@ use std::sync::Arc;
 
 use bevy::prelude::*;
 
-use dm_spine_runtime::animation::{
+use spine_runtime::animation::{
     AnimationState, AnimationStateData, Event as SpineEvent, state::StateEvent,
 };
-use dm_spine_runtime::render::SkeletonRenderer;
-use dm_spine_runtime::skeleton::{Physics, Skeleton};
+use spine_runtime::render::SkeletonRenderer;
+use spine_runtime::skeleton::{Physics, Skeleton};
 
 use crate::asset::SpineSkeletonAsset;
 use crate::components::{SpineRender2d, SpineRender3d, SpineSkeleton, SpineSkeletonState};
@@ -98,14 +98,14 @@ pub fn initialize_spine_skeletons(
                 animation_state.set_animation_by_name(pending.track, &pending.name, pending.looping)
         {
             warn!(
-                "dm_spine_bevy: pending animation {:?} on track {} failed: {err:?}",
+                "spine_bevy: pending animation {:?} on track {} failed: {err:?}",
                 pending.name, pending.track
             );
         }
 
         if let Some(skin) = sk.pending_skin.take() {
             if let Err(err) = skeleton.set_skin_by_name(&skin) {
-                warn!("dm_spine_bevy: pending skin {skin:?} failed: {err:?}");
+                warn!("spine_bevy: pending skin {skin:?} failed: {err:?}");
             } else {
                 skeleton.setup_pose_slots();
             }

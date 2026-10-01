@@ -29,7 +29,7 @@ use bevy::math::Vec2;
 use bevy::prelude::*;
 use bevy::render::view::screenshot::{Screenshot, save_to_disk};
 
-use dm_spine_bevy::SpineSkeletonState;
+use spine_bevy::SpineSkeletonState;
 
 // ---- Asset root + rig discovery ------------------------------------------
 
@@ -252,7 +252,7 @@ fn screenshot_driver_system(
     }
     if state.current >= state.trigger {
         let path = state.path.clone();
-        info!("dm_spine_bevy example: screenshot to {path}");
+        info!("spine_bevy example: screenshot to {path}");
         commands
             .spawn(Screenshot::primary_window())
             .observe(save_to_disk(path));

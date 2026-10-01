@@ -32,7 +32,7 @@ use bevy::prelude::*;
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
 
-use dm_spine_runtime::load::{AtlasAttachmentLoader, JsonError, SkeletonJson};
+use spine_runtime::load::{AtlasAttachmentLoader, JsonError, SkeletonJson};
 
 use crate::asset::atlas_loader::SpineAtlasAsset;
 use crate::asset::skel_loader::SpineSkeletonAsset;

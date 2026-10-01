@@ -2223,25 +2223,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "dm_spine_bevy"
-version = "0.1.0"
-dependencies = [
- "bevy",
- "dm_spine_runtime",
- "serde",
- "thiserror 2.0.18",
-]
-
-[[package]]
-name = "dm_spine_runtime"
-version = "0.1.0"
-dependencies = [
- "glam 0.32.1",
- "serde_json",
- "thiserror 2.0.18",
-]
-
-[[package]]
 name = "document-features"
 version = "0.2.12"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -4493,6 +4474,25 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "d5fe4ccb98d9c292d56fec89a5e07da7fc4cf0dc11e156b41793132775d3e591"
 dependencies = [
  "portable-atomic",
+]
+
+[[package]]
+name = "spine_bevy"
+version = "0.1.0"
+dependencies = [
+ "bevy",
+ "serde",
+ "spine_runtime",
+ "thiserror 2.0.18",
+]
+
+[[package]]
+name = "spine_runtime"
+version = "0.1.0"
+dependencies = [
+ "glam 0.32.1",
+ "serde_json",
+ "thiserror 2.0.18",
 ]
 
 [[package]]

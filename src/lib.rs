@@ -25,13 +25,13 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
 // THE SPINE RUNTIMES, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-//! Bevy 0.18 integration for [`dm_spine_runtime`].
+//! Bevy 0.18 integration for [`spine_runtime`].
 //!
 //! # Quick start (2D)
 //!
 //! ```no_run
 //! use bevy::prelude::*;
-//! use dm_spine_bevy::{SpinePlugin, SpineSkeleton, SpineSkeletonAsset, SpineSkeletonLoaderSettings};
+//! use spine_bevy::{SpinePlugin, SpineSkeleton, SpineSkeletonAsset, SpineSkeletonLoaderSettings};
 //!
 //! fn setup(mut commands: Commands, asset_server: Res<AssetServer>) {
 //!     commands.spawn(Camera2d);
@@ -92,7 +92,7 @@
 //! straight-alpha pairs; prefer the PMA variant via
 //! [`SpineSkeletonLoaderSettings::atlas_path`].
 //!
-//! [`dm_spine_runtime`]: https://github.com/dead-money/dm_spine_runtime
+//! [`spine_runtime`]: https://github.com/dead-money/spine_runtime
 
 use bevy::asset::AssetApp;
 use bevy::pbr::MaterialPlugin;

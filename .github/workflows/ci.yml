@@ -19,19 +19,19 @@ jobs:
     name: fmt + clippy + test
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout dm_spine_bevy
+      - name: Checkout spine_bevy
         uses: actions/checkout@v6
         with:
-          path: dm_spine_bevy
+          path: spine_bevy
 
-      # Path-dep on dm_spine_runtime as a sibling clone; matches the
-      # workspace layout documented in dm_spine_bevy/Cargo.toml.
+      # Path-dep on spine_runtime as a sibling clone; matches the
+      # workspace layout documented in spine_bevy/Cargo.toml.
       #
       # On pull requests we try the matching-branch-name heuristic first
       # so a coordinated pair of PRs (same branch name on both repos)
       # can go green together. Falls back to the runtime's default branch
       # (main) when no matching branch exists upstream.
-      - name: Resolve dm_spine_runtime ref
+      - name: Resolve spine_runtime ref
         id: runtime_ref
         run: |
           branch="${{ github.head_ref }}"
@@ -40,20 +40,20 @@ jobs:
             exit 0
           fi
           if git ls-remote --exit-code --heads \
-              https://github.com/dead-money/dm_spine_runtime.git \
+              https://github.com/dead-money/spine_runtime.git \
               "$branch" >/dev/null 2>&1; then
-            echo "Using matching branch $branch on dm_spine_runtime"
+            echo "Using matching branch $branch on spine_runtime"
             echo "ref=$branch" >> "$GITHUB_OUTPUT"
           else
-            echo "No matching branch on dm_spine_runtime; using default"
+            echo "No matching branch on spine_runtime; using default"
             echo "ref=" >> "$GITHUB_OUTPUT"
           fi
 
-      - name: Checkout dm_spine_runtime
+      - name: Checkout spine_runtime
         uses: actions/checkout@v6
         with:
-          repository: dead-money/dm_spine_runtime
-          path: dm_spine_runtime
+          repository: dead-money/spine_runtime
+          path: spine_runtime
           ref: ${{ steps.runtime_ref.outputs.ref }}
 
       # spine-runtimes is needed by examples + by the runtime crate's
@@ -65,7 +65,7 @@ jobs:
         with:
           repository: EsotericSoftware/spine-runtimes
           path: spine-runtimes
-          # Match dm_spine_runtime's pin (upstream/4.3); bump together.
+          # Match spine_runtime's pin (upstream/4.3); bump together.
           ref: ba17cf88b198c6531c6c51d8d4e1e4b3c3ab47dd
 
       # Bevy's wgpu / winit / alsa deps need a handful of system
@@ -93,17 +93,17 @@ jobs:
         uses: Swatinem/rust-cache@v2
         with:
           workspaces: |
-            dm_spine_bevy
-            dm_spine_runtime
+            spine_bevy
+            spine_runtime
 
       - name: cargo fmt
-        working-directory: dm_spine_bevy
+        working-directory: spine_bevy
         run: cargo fmt --all --check
 
       - name: cargo clippy
-        working-directory: dm_spine_bevy
+        working-directory: spine_bevy
         run: cargo clippy --all-targets
 
       - name: cargo test
-        working-directory: dm_spine_bevy
+        working-directory: spine_bevy
         run: cargo test --all-targets

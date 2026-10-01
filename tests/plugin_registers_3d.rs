@@ -34,7 +34,7 @@ use bevy::asset::AssetPlugin;
 use bevy::mesh::MeshPlugin;
 use bevy::prelude::*;
 
-use dm_spine_bevy::{SpinePlugin, SpineRender3d, SpineSkeleton, SpineSkeletonAsset};
+use spine_bevy::{SpinePlugin, SpineRender3d, SpineSkeleton, SpineSkeletonAsset};
 
 #[test]
 fn plugin_builds_and_ticks_an_empty_3d_skeleton_component() {
@@ -64,7 +64,7 @@ fn default_skeleton_gets_2d_marker_backfilled() {
     // A skeleton spawned without either marker should end up with
     // SpineRender2d inserted by the EnsureMarkers stage, so existing
     // 2D-only code keeps working after the 3D plugin lands.
-    use dm_spine_bevy::SpineRender2d;
+    use spine_bevy::SpineRender2d;
 
     let mut app = App::new();
     app.add_plugins(MinimalPlugins)

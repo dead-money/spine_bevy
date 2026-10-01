@@ -32,8 +32,8 @@ use bevy::prelude::*;
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
 
-use dm_spine_runtime::data::SkeletonData;
-use dm_spine_runtime::load::{AtlasAttachmentLoader, BinaryError, SkeletonBinary};
+use spine_runtime::data::SkeletonData;
+use spine_runtime::load::{AtlasAttachmentLoader, BinaryError, SkeletonBinary};
 
 use crate::asset::atlas_loader::SpineAtlasAsset;
 
