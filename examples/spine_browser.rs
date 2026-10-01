@@ -1,10 +1,3 @@
-// Spine Runtimes License Agreement
-// Last updated April 5, 2025. Replaces all prior versions.
-//
-// Copyright (c) 2013-2025, Esoteric Software LLC
-//
-// See LICENSE for full terms.
-
 //! Interactive browser for the example rigs that ship in upstream
 //! `spine-runtimes/examples/`. Cycle through rigs / animations / skins with
 //! the keyboard; the camera live-fits to the visible AABB of the current

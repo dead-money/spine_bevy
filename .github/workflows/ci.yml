@@ -107,3 +107,9 @@ jobs:
       - name: cargo test
         working-directory: spine_bevy
         run: cargo test --all-targets
+
+      - name: cargo doc
+        working-directory: spine_bevy
+        env:
+          RUSTDOCFLAGS: "-D warnings"
+        run: cargo doc --no-deps

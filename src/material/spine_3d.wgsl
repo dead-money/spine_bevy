@@ -1,10 +1,3 @@
-// Spine Runtimes License Agreement
-// Last updated April 5, 2025. Replaces all prior versions.
-//
-// Copyright (c) 2013-2025, Esoteric Software LLC
-//
-// See LICENSE for full terms.
-
 // 3D (`Material`) sibling of `spine.wgsl`. Same fragment math (tint-black
 // over a PMA atlas sample); differs from the 2D shader only in which
 // import paths are used for the vertex transformation and in the

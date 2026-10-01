@@ -1,10 +1,3 @@
-// Spine Runtimes License Agreement
-// Last updated April 5, 2025. Replaces all prior versions.
-//
-// Copyright (c) 2013-2025, Esoteric Software LLC
-//
-// See LICENSE for full terms.
-
 //! Helpers shared by the Bevy crate's examples. Cargo can't directly link
 //! a single helper crate from `examples/`, so each example does
 //! `mod common;` to pull this in.
