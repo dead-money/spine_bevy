@@ -1,10 +1,3 @@
-// Spine Runtimes License Agreement
-// Last updated April 5, 2025. Replaces all prior versions.
-//
-// Copyright (c) 2013-2025, Esoteric Software LLC
-//
-// See LICENSE for full terms.
-
 // Mesh2d-compatible shader for spine_bevy. Per-material uniform carries
 // the slot's premultiplied light color and its tint-black dark color; the
 // runtime batcher guarantees every vertex in one RenderCommand shares the

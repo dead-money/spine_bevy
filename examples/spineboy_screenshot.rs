@@ -1,10 +1,3 @@
-// Spine Runtimes License Agreement
-// Last updated April 5, 2025. Replaces all prior versions.
-//
-// Copyright (c) 2013-2025, Esoteric Software LLC
-//
-// See LICENSE for full terms.
-
 //! Non-interactive sibling of `spineboy_walk`. Spawns the same scene,
 //! waits for the asset to finish loading + a handful of tick-and-render
 //! frames, then screenshots the window and exits. Useful for CI / visual

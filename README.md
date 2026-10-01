@@ -15,10 +15,10 @@ Built for Dead Money's own games and mostly written by AI agents under human dir
 
 ## You need a Spine Editor license
 
-This crate carries the same terms as `spine_runtime`, which is a translation of Esoteric Software's `spine-cpp`. Distribution is governed by the [Spine Editor License Agreement](https://esotericsoftware.com/spine-editor-license) and the [Spine Runtimes License Agreement](https://esotericsoftware.com/spine-runtimes-license), as for every official Spine runtime:
+This crate's own code is MIT, but it depends on `spine_runtime`, a translation of Esoteric Software's `spine-cpp` distributed under the [Spine Runtimes License Agreement](https://esotericsoftware.com/spine-runtimes-license). Anything you build with this crate includes `spine_runtime`, so:
 
 - **Every end user of software built with this crate needs their own [Spine Editor license](https://esotericsoftware.com/spine-purchase).**
-- **Keep the notices.** Each source file carries Esoteric Software's copyright block, and `LICENSE` is the Spine Runtimes License verbatim.
+- **Keep `spine_runtime`'s notices.** Its source files and `LICENSE` carry Esoteric Software's copyright and license, and both go with any redistribution.
 
 If you're unsure whether your use is covered, check the [Spine licensing page](https://esotericsoftware.com/spine-purchase) or ask Esoteric Software.
 
@@ -168,9 +168,9 @@ ls /tmp/frames/frame_*.png | awk 'NR%2==1' | xargs convert -delay 3 -loop 0 -lay
 
 ## Licensing
 
-Distributed under the [Spine Runtimes License Agreement](https://esotericsoftware.com/spine-runtimes-license). See [`LICENSE`](./LICENSE) for the full text.
+Source in this repository is © 2026 Dead Money under the [MIT License](./LICENSE). It's original work; no `spine-cpp` code is translated here.
 
-Copyright © 2013-2025 Esoteric Software LLC. Bevy integration © Dead Money LLC, published under the same license.
+`spine_runtime`, which this crate depends on, is a `spine-cpp` derivative under the [Spine Runtimes License Agreement](https://esotericsoftware.com/spine-runtimes-license), not MIT. Its terms, including the Spine Editor license requirement above, apply to anything built with this crate.
 
 ## Acknowledgements
 

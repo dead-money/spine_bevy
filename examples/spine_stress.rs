@@ -1,10 +1,3 @@
-// Spine Runtimes License Agreement
-// Last updated April 5, 2025. Replaces all prior versions.
-//
-// Copyright (c) 2013-2025, Esoteric Software LLC
-//
-// See LICENSE for full terms.
-
 //! Stress test: spawn N skeletons in a grid, run them all at full speed,
 //! report frame budget + per-stage timing in the HUD. Use the arrow keys
 //! to scale N up and down at runtime to find the cliff on your machine.

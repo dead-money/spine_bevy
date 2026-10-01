@@ -11,6 +11,9 @@ pre-1.0, any `0.x` release may contain breaking changes.
 - **Breaking:** targets Bevy 0.19 and Spine 4.3, through `spine_runtime` 0.2.
   4.2 exports no longer load.
 - The crate is renamed from `dm_spine_bevy` to `spine_bevy`.
+- Licensed under MIT. This crate's code is original rather than a `spine-cpp`
+  derivative; `spine_runtime`, which it depends on, stays under the Spine
+  Runtimes License, so its Spine Editor license requirement still applies.
 
 ## [0.1.0]
 
