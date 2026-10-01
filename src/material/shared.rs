@@ -36,7 +36,7 @@ use bevy::render::render_resource::{
     BlendComponent, BlendFactor, BlendOperation, BlendState, ShaderType,
 };
 
-use dm_spine_runtime::data::BlendMode;
+use spine_runtime::data::BlendMode;
 
 /// Per-material uniform carrying the slot's light + dark tint as
 /// premultiplied RGBA. Matches the `SpineColors` struct in the shaders at
@@ -51,7 +51,7 @@ pub struct SpineColors {
     pub dark: Vec4,
 }
 
-/// Bevy-side mirror of `dm_spine_runtime::data::BlendMode`. Lives in the
+/// Bevy-side mirror of `spine_runtime::data::BlendMode`. Lives in the
 /// plugin crate so the runtime crate doesn't take a `bevy` dep.
 #[repr(u8)]
 #[derive(Copy, Clone, Hash, Eq, PartialEq, Default, Debug)]

@@ -1,10 +1,10 @@
-# dm_spine_bevy
+# spine_bevy
 
-[![CI](https://github.com/dead-money/dm_spine_bevy/actions/workflows/ci.yml/badge.svg)](https://github.com/dead-money/dm_spine_bevy/actions/workflows/ci.yml)
+[![CI](https://github.com/dead-money/spine_bevy/actions/workflows/ci.yml/badge.svg)](https://github.com/dead-money/spine_bevy/actions/workflows/ci.yml)
 
 A Bevy 0.18 plugin that loads, animates, and draws [Spine](https://esotericsoftware.com/) 4.3 skeletons. Skeletons are entities; they render through Bevy's 2D sprite pipeline or its 3D pipeline, chosen per entity.
 
-It builds on [`dm_spine_runtime`](https://github.com/dead-money/dm_spine_runtime), the renderer-agnostic Rust port of the Spine runtime. This crate maps that runtime's `RenderCommand` stream onto Bevy meshes and materials, and sets `unsafe_code = "forbid"`.
+It builds on [`spine_runtime`](https://github.com/dead-money/spine_runtime), the renderer-agnostic Rust port of the Spine runtime. This crate maps that runtime's `RenderCommand` stream onto Bevy meshes and materials, and sets `unsafe_code = "forbid"`.
 
 Built for Dead Money's own games and mostly written by AI agents under human direction.
 
@@ -15,7 +15,7 @@ Built for Dead Money's own games and mostly written by AI agents under human dir
 
 ## You need a Spine Editor license
 
-This crate inherits the license obligations of `dm_spine_runtime`, a derivative of Esoteric Software's `spine-cpp`. Distribution is governed by the [Spine Editor License Agreement](https://esotericsoftware.com/spine-editor-license) and the [Spine Runtimes License Agreement](https://esotericsoftware.com/spine-runtimes-license), the same obligation every official Spine runtime carries:
+This crate inherits the license obligations of `spine_runtime`, a derivative of Esoteric Software's `spine-cpp`. Distribution is governed by the [Spine Editor License Agreement](https://esotericsoftware.com/spine-editor-license) and the [Spine Runtimes License Agreement](https://esotericsoftware.com/spine-runtimes-license), the same obligation every official Spine runtime carries:
 
 - **Every end user of software built with this crate needs their own [Spine Editor license](https://esotericsoftware.com/spine-purchase).**
 - **Keep the notices.** Every source file carries Esoteric Software's copyright block, and `LICENSE` reproduces the Spine Runtimes License verbatim.
@@ -29,15 +29,15 @@ If your use case is in doubt, check the [Spine licensing page](https://esoterics
 ```toml
 [dependencies]
 bevy = "0.18"
-dm_spine_runtime = { git = "https://github.com/dead-money/dm_spine_runtime" }
-dm_spine_bevy = { git = "https://github.com/dead-money/dm_spine_bevy" }
+spine_runtime = { git = "https://github.com/dead-money/spine_runtime" }
+spine_bevy = { git = "https://github.com/dead-money/spine_bevy" }
 ```
 
 Neither crate is on crates.io yet.
 
 ```rust
 use bevy::prelude::*;
-use dm_spine_bevy::{
+use spine_bevy::{
     SpinePlugin, SpineSkeleton, SpineSkeletonAsset, SpineSkeletonLoaderSettings,
 };
 
@@ -115,15 +115,15 @@ For a straight-alpha atlas, either point the loader at a PMA variant (as in the 
 
 ## Version compatibility
 
-| Bevy | Spine | dm_spine_bevy |
+| Bevy | Spine | spine_bevy |
 |------|-------|---------------|
 | 0.18 | 4.3   | `main`        |
 
-The crate pins a Bevy minor because the render path depends on `Material2d` / `Material` specialization and the `Mesh2d` / `Mesh3d` extraction model, which change between releases. For Spine 4.2, use the `v0.1.0` tag of `dm_spine_runtime` with this crate at `8c7be8a`, the last 4.2 commit.
+The crate pins a Bevy minor because the render path depends on `Material2d` / `Material` specialization and the `Mesh2d` / `Mesh3d` extraction model, which change between releases. For Spine 4.2, use the `v0.1.0` tag of `spine_runtime` with this crate at `8c7be8a`, the last 4.2 commit.
 
 ## Building
 
-The examples load the canonical rigs from a sibling clone of [`spine-runtimes`](https://github.com/EsotericSoftware/spine-runtimes). That art is licensed separately and doesn't ship with this crate. CI pins the same upstream `4.3` commit as `dm_spine_runtime`.
+The examples load the canonical rigs from a sibling clone of [`spine-runtimes`](https://github.com/EsotericSoftware/spine-runtimes). That art is licensed separately and doesn't ship with this crate. CI pins the same upstream `4.3` commit as `spine_runtime`.
 
 ```sh
 git clone -b 4.3 https://github.com/EsotericSoftware/spine-runtimes ../spine-runtimes
@@ -181,4 +181,4 @@ Copyright © 2013-2025 Esoteric Software LLC. Bevy integration © Dead Money LLC
 
 ## Acknowledgements
 
-Built on [Bevy](https://bevy.org/) and [`dm_spine_runtime`](https://github.com/dead-money/dm_spine_runtime), a port of [Esoteric Software](https://esotericsoftware.com/)'s Spine runtime. The upstream [spine-runtimes](https://github.com/EsotericSoftware/spine-runtimes) repository is the source of truth for runtime behavior. Report runtime bugs to `dm_spine_runtime`; report integration bugs here.
+Built on [Bevy](https://bevy.org/) and [`spine_runtime`](https://github.com/dead-money/spine_runtime), a port of [Esoteric Software](https://esotericsoftware.com/)'s Spine runtime. The upstream [spine-runtimes](https://github.com/EsotericSoftware/spine-runtimes) repository is the source of truth for runtime behavior. Report runtime bugs to `spine_runtime`; report integration bugs here.

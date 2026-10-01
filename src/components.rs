@@ -27,9 +27,9 @@
 
 use bevy::prelude::*;
 
-use dm_spine_runtime::animation::{AnimationState, Event};
-use dm_spine_runtime::render::SkeletonRenderer;
-use dm_spine_runtime::skeleton::{Physics, Skeleton, SkinNotFound};
+use spine_runtime::animation::{AnimationState, Event};
+use spine_runtime::render::SkeletonRenderer;
+use spine_runtime::skeleton::{Physics, Skeleton, SkinNotFound};
 
 use crate::asset::SpineSkeletonAsset;
 use crate::material::{SpineMaterial, SpineMaterial3d};
@@ -187,7 +187,7 @@ impl SpineSkeleton {
                 pending.looping,
             ) {
                 warn!(
-                    "dm_spine_bevy: set_animation_by_name({}, {:?}, {}) failed: {err:?}",
+                    "spine_bevy: set_animation_by_name({}, {:?}, {}) failed: {err:?}",
                     pending.track, pending.name, pending.looping
                 );
             }

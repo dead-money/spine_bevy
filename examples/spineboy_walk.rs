@@ -29,7 +29,7 @@
 //! track 0. Points the asset root at the upstream `spine-runtimes/examples`
 //! directory so we don't duplicate rig binaries into this crate.
 //!
-//! Run from `dm_spine_bevy/`:
+//! Run from `spine_bevy/`:
 //!
 //! ```bash
 //! cargo run --example spineboy_walk
@@ -38,7 +38,7 @@
 use bevy::asset::AssetPlugin;
 use bevy::prelude::*;
 
-use dm_spine_bevy::{SpinePlugin, SpineSkeleton, SpineSkeletonAsset, SpineSkeletonLoaderSettings};
+use spine_bevy::{SpinePlugin, SpineSkeleton, SpineSkeletonAsset, SpineSkeletonLoaderSettings};
 
 mod common;
 

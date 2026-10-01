@@ -43,7 +43,7 @@ use bevy::prelude::*;
 use bevy::render::view::screenshot::{Screenshot, save_to_disk};
 use bevy::window::WindowResolution;
 
-use dm_spine_bevy::{
+use spine_bevy::{
     SpinePlugin, SpineSet, SpineSkeleton, SpineSkeletonAsset, SpineSkeletonLoaderSettings,
 };
 

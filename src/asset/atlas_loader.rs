@@ -32,7 +32,7 @@ use bevy::image::Image;
 use bevy::prelude::*;
 use thiserror::Error;
 
-use dm_spine_runtime::atlas::{Atlas, AtlasError};
+use spine_runtime::atlas::{Atlas, AtlasError};
 
 /// Parsed Spine `.atlas` file plus a page-index-parallel `Vec<Handle<Image>>`
 /// that the Bevy-side renderer uses to resolve `TextureId(page_index)` into a

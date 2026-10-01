@@ -1,6 +1,6 @@
 # Performance evaluation + improvement roadmap
 
-Written 2026-04-23 against `dm_spine_bevy` commit `1665ff3` (post-simplify pass: parallel `tick_spine_skeletons`, `SpineInitialized` filter, `attribute_mut`-based mesh reuse).
+Written 2026-04-23 against `spine_bevy` commit `1665ff3` (post-simplify pass: parallel `tick_spine_skeletons`, `SpineInitialized` filter, `attribute_mut`-based mesh reuse).
 
 Reference hardware: NVIDIA RTX 4090 + Intel i9-14900K (24 cores), Linux, X11/Vulkan windowed.
 
@@ -42,7 +42,7 @@ Currently we report `Diagnostic::smoothed()`. Add a `--histogram` mode that reco
 
 ### 2. Per-stage diagnostics inside the bevy crate proper
 
-The `mark_*_start` / `mark_*_end` timing systems in `spine_stress` only run in that example. Move them behind a feature gate (e.g. `dm_spine_bevy/profile`) so any consumer can flip them on. Costs ~80 LOC and gives every game using the crate the same per-stage visibility we currently get from the stress harness.
+The `mark_*_start` / `mark_*_end` timing systems in `spine_stress` only run in that example. Move them behind a feature gate (e.g. `spine_bevy/profile`) so any consumer can flip them on. Costs ~80 LOC and gives every game using the crate the same per-stage visibility we currently get from the stress harness.
 
 ### 3. `puffin` or `tracy` integration
 

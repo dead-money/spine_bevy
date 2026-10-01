@@ -55,18 +55,18 @@ use bevy::diagnostic::{
 use bevy::prelude::*;
 use bevy::window::{PresentMode, WindowResolution};
 
-use dm_spine_bevy::{
+use spine_bevy::{
     SpinePlugin, SpineSet, SpineSkeleton, SpineSkeletonAsset, SpineSkeletonLoaderSettings,
 };
-use dm_spine_runtime::skeleton::Physics;
+use spine_runtime::skeleton::Physics;
 
 mod common;
 use common::RigEntry;
 
 /// Diagnostic path for the per-frame `SpineSet::Tick` duration.
-const TICK_MS: DiagnosticPath = DiagnosticPath::const_new("dm_spine_bevy/tick_ms");
+const TICK_MS: DiagnosticPath = DiagnosticPath::const_new("spine_bevy/tick_ms");
 /// Diagnostic path for the per-frame `SpineSet::BuildMeshes` duration.
-const BUILD_MS: DiagnosticPath = DiagnosticPath::const_new("dm_spine_bevy/build_meshes_ms");
+const BUILD_MS: DiagnosticPath = DiagnosticPath::const_new("spine_bevy/build_meshes_ms");
 
 /// Default initial count. The example always presents a perfect-square
 /// grid centered on the origin, growing in N² steps.

@@ -33,7 +33,7 @@ use bevy::asset::AssetPlugin;
 use bevy::mesh::MeshPlugin;
 use bevy::prelude::*;
 
-use dm_spine_bevy::{SpinePlugin, SpineSkeleton, SpineSkeletonAsset};
+use spine_bevy::{SpinePlugin, SpineSkeleton, SpineSkeletonAsset};
 
 #[test]
 fn plugin_builds_and_ticks_an_empty_skeleton_component() {

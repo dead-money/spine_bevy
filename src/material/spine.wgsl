@@ -5,7 +5,7 @@
 //
 // See LICENSE for full terms.
 
-// Mesh2d-compatible shader for dm_spine_bevy. Per-material uniform carries
+// Mesh2d-compatible shader for spine_bevy. Per-material uniform carries
 // the slot's premultiplied light color and its tint-black dark color; the
 // runtime batcher guarantees every vertex in one RenderCommand shares the
 // same colors, so we pass them as uniforms rather than per-vertex attributes.

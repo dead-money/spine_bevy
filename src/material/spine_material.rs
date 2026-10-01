@@ -80,7 +80,7 @@ impl From<&SpineMaterial> for SpineMaterialKey {
     }
 }
 
-const SHADER_ASSET_PATH: &str = "embedded://dm_spine_bevy/material/spine.wgsl";
+const SHADER_ASSET_PATH: &str = "embedded://spine_bevy/material/spine.wgsl";
 
 impl Material2d for SpineMaterial {
     fn vertex_shader() -> ShaderRef {

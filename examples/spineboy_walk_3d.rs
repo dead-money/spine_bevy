@@ -31,7 +31,7 @@
 //! projection orbits a checkered ground plane so the rig clearly sits in
 //! a 3D scene rather than a flat sprite canvas.
 //!
-//! Run from `dm_spine_bevy/`:
+//! Run from `spine_bevy/`:
 //!
 //! ```bash
 //! cargo run --example spineboy_walk_3d
@@ -48,7 +48,7 @@ use std::f32::consts::TAU;
 use bevy::asset::AssetPlugin;
 use bevy::prelude::*;
 
-use dm_spine_bevy::{
+use spine_bevy::{
     SpinePlugin, SpineRender3d, SpineSkeleton, SpineSkeletonAsset, SpineSkeletonLoaderSettings,
 };
 
