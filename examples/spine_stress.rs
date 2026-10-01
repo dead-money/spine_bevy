@@ -493,7 +493,7 @@ fn seed_time_offsets(
         let ready = sk
             .state
             .as_ref()
-            .is_some_and(|st| !st.animation_state.skeleton_data().animations.is_empty());
+            .is_some_and(|st| !st.animation_state.data().data().animations.is_empty());
         if !ready {
             continue;
         }
@@ -501,8 +501,8 @@ fn seed_time_offsets(
         // have the requested name); fall back to the first declared
         // animation so something is always playing.
         if let Some(state) = sk.state.as_mut()
-            && state.animation_state.current(0).is_none()
-            && let Some(anim) = state.animation_state.skeleton_data().animations.first()
+            && state.animation_state.track(0).is_none()
+            && let Some(anim) = state.animation_state.data().data().animations.first()
         {
             let name = anim.name.clone();
             sk.play(0, name, true);

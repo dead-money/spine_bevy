@@ -1,6 +1,6 @@
 # dm_spine_bevy
 
-Bevy 0.18 integration for [`dm_spine_runtime`](https://github.com/dead-money/dm_spine_runtime), the native Rust port of the [Spine](https://esotericsoftware.com/) 4.2 runtime.
+Bevy 0.18 integration for [`dm_spine_runtime`](https://github.com/dead-money/dm_spine_runtime), the native Rust port of the [Spine](https://esotericsoftware.com/) 4.3 runtime.
 
 <p align="center">
   <img src="docs/celestial-circus-swing.gif" alt="celestial-circus rig playing the swing animation, captured live from the spine_browser example" width="640">
@@ -8,7 +8,7 @@ Bevy 0.18 integration for [`dm_spine_runtime`](https://github.com/dead-money/dm_
 
 This crate is the thin layer that maps the runtime's renderer-agnostic `RenderCommand` stream onto Bevy meshes and materials. It supports both Bevy's 2D (`Material2d` / sprite) pipeline and its 3D (`Material` / PBR) pipeline — skeletons opt in per-entity via a marker component. The runtime crate itself has no GPU or windowing dependency; this one knows about wgpu, Bevy's material traits, and the Bevy ECS.
 
-> **About this project.** This crate is built for Dead Money's internal game projects and was primarily authored by AI agents (Claude Code) driving an integration of an in-house Spine 4.2 runtime port into Bevy, with a human engineer directing scope, reviewing output, and steering architecture. It's published for transparency and for use inside Dead Money, not as a polished third-party plugin. APIs will shift, edge cases beyond what our own game needs may be unhandled, and documentation leans toward "what would a maintainer need?" rather than "what would a brand-new user expect?". If you adopt it anyway, expect to file issues and read source occasionally.
+> **About this project.** This crate is built for Dead Money's internal game projects and was primarily authored by AI agents (Claude Code) driving an integration of an in-house Spine 4.3 runtime port into Bevy, with a human engineer directing scope, reviewing output, and steering architecture. It's published for transparency and for use inside Dead Money, not as a polished third-party plugin. APIs will shift, edge cases beyond what our own game needs may be unhandled, and documentation leans toward "what would a maintainer need?" rather than "what would a brand-new user expect?". If you adopt it anyway, expect to file issues and read source occasionally.
 
 ## You need a Spine Editor license to use this
 
@@ -22,7 +22,7 @@ If your use case is in doubt, consult the [Spine licensing page](https://esoteri
 ## Compatibility
 
 - **Bevy 0.18.x.** Pinned to a specific Bevy version because the rendering pipeline ties into `Material2d` / `Material` specialization and the `Mesh2d` / `Mesh3d` extraction models, which evolve across releases.
-- **Spine 4.2** exports in either binary `.skel` or JSON `.json` format, paired with a `.atlas`.
+- **Spine 4.3** exports in either binary `.skel` or JSON `.json` format, paired with a `.atlas`. The runtime rejects 4.2 exports; re-export from a 4.3 editor.
 
 ## What's in the box
 

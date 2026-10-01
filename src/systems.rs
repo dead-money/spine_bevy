@@ -87,7 +87,7 @@ pub fn initialize_spine_skeletons(
         let data = Arc::clone(&asset.data);
         let mut skeleton = Skeleton::new(Arc::clone(&data));
         skeleton.update_cache();
-        skeleton.set_to_setup_pose();
+        skeleton.setup_pose();
         skeleton.update_world_transform(Physics::None);
 
         let state_data = Arc::new(AnimationStateData::new(Arc::clone(&data)));
@@ -107,7 +107,7 @@ pub fn initialize_spine_skeletons(
             if let Err(err) = skeleton.set_skin_by_name(&skin) {
                 warn!("dm_spine_bevy: pending skin {skin:?} failed: {err:?}");
             } else {
-                skeleton.set_slots_to_setup_pose();
+                skeleton.setup_pose_slots();
             }
         }
 

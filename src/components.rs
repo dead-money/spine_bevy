@@ -244,7 +244,7 @@ impl SpineSkeleton {
         let name = name.into();
         if let Some(state) = self.state.as_mut() {
             state.skeleton.set_skin_by_name(&name)?;
-            state.skeleton.set_slots_to_setup_pose();
+            state.skeleton.setup_pose_slots();
             Ok(())
         } else {
             self.pending_skin = Some(name);
