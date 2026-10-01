@@ -1,13 +1,26 @@
 [package]
 name = "spine_bevy"
-version = "0.1.0"
+version = "0.2.0"
 edition = "2024"
-description = "Bevy 0.19 integration for spine_runtime."
+rust-version = "1.99"
+authors = ["Brandon Reinhart <brandon@deadmoney.gg>"]
+description = "Bevy 0.19 plugin for the unofficial spine_runtime port: load, animate, and draw Spine 4.3 skeletons."
+repository = "https://github.com/dead-money/spine_bevy"
+documentation = "https://docs.rs/spine_bevy"
 license-file = "LICENSE"
+readme = "README.md"
+keywords = ["spine", "bevy", "animation", "2d", "skeletal"]
+categories = ["game-development", "graphics"]
+# Not cleared for crates.io until Esoteric Software signs off, and spine_runtime
+# has to be published first. Flipping this is the only gate; see RELEASING.md.
+publish = false
+# docs/ only holds the README's preview GIF, which crates.io loads from GitHub.
+exclude = [".github/", ".claude/", "docs/", "CLAUDE.md", "PERF_EVAL.md", "RELEASING.md", "release.toml"]
 
 [dependencies]
 bevy = "0.19"
-spine_runtime = { path = "../spine_runtime" }
+# The sibling checkout for development; the version for the published crate.
+spine_runtime = { path = "../spine_runtime", version = "0.2" }
 serde = { version = "1", features = ["derive"] }
 thiserror = "2"
 
