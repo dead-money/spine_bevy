@@ -1,6 +1,8 @@
 # spine_bevy
 
 [![CI](https://github.com/dead-money/spine_bevy/actions/workflows/ci.yml/badge.svg)](https://github.com/dead-money/spine_bevy/actions/workflows/ci.yml)
+[![crates.io](https://img.shields.io/crates/v/spine_bevy.svg)](https://crates.io/crates/spine_bevy)
+[![docs.rs](https://docs.rs/spine_bevy/badge.svg)](https://docs.rs/spine_bevy)
 
 A Bevy 0.19 plugin that loads, animates, and draws [Spine](https://esotericsoftware.com/) 4.3 skeletons. Each skeleton is an entity, drawn in 2D or 3D.
 
@@ -26,17 +28,10 @@ This release reads **Spine 4.3** exports, binary (`.skel`) or JSON, each paired 
 
 ## Quick start
 
-Neither crate is on crates.io yet. Until they are, clone both side by side (this crate finds `spine_runtime` at `../spine_runtime`) and depend on them by path:
-
-```sh
-git clone https://github.com/dead-money/spine_runtime
-git clone https://github.com/dead-money/spine_bevy
-```
-
 ```toml
 [dependencies]
 bevy = "0.19"
-spine_bevy = { path = "../spine_bevy" }
+spine_bevy = "0.2"
 ```
 
 It needs Rust 1.99 or newer.
@@ -145,9 +140,10 @@ Each Bevy minor needs its own `spine_bevy` release. The 0.18 rows are the last c
 
 ## Examples
 
-The examples use the rigs from Esoteric's [`spine-runtimes`](https://github.com/EsotericSoftware/spine-runtimes) repository, cloned beside this one. That art is licensed separately and doesn't ship with this crate.
+The examples use the rigs from Esoteric's [`spine-runtimes`](https://github.com/EsotericSoftware/spine-runtimes) repository, cloned beside this one. That art is licensed separately and doesn't ship with this crate. A clone of this repo also builds against a `spine_runtime` checkout beside it.
 
 ```sh
+git clone https://github.com/dead-money/spine_runtime ../spine_runtime
 git clone -b 4.3 https://github.com/EsotericSoftware/spine-runtimes ../spine-runtimes
 cargo run --example spine_browser
 ```
