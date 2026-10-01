@@ -1,3 +1,7 @@
+//! The plugin's systems, their [`SpineSet`]s, and the event messages.
+//! [`SpinePlugin`](crate::SpinePlugin) schedules all of them; they are
+//! public for apps that order their own systems against them.
+
 use std::sync::Arc;
 
 use bevy::prelude::*;
@@ -141,6 +145,7 @@ pub fn tick_spine_skeletons(
 /// `MessageReader`.
 #[derive(Message, Debug, Clone)]
 pub struct SpineStateEvent {
+    /// The [`SpineSkeleton`] entity.
     pub entity: Entity,
     pub event: StateEvent,
 }
@@ -150,6 +155,7 @@ pub struct SpineStateEvent {
 /// for readers that want only keyframes.
 #[derive(Message, Debug, Clone)]
 pub struct SpineKeyframeEvent {
+    /// The [`SpineSkeleton`] entity.
     pub entity: Entity,
     pub event: SpineEvent,
 }

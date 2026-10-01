@@ -1,4 +1,10 @@
-//! Bevy 0.19 integration for [`spine_runtime`].
+//! Bevy 0.19 plugin for [`spine_runtime`]: load, animate and draw Spine 4.3
+//! skeletons.
+//!
+//! Add [`SpinePlugin`], load a `.skel` or `.json` export as a
+//! [`SpineSkeletonAsset`], and spawn a [`SpineSkeleton`] with it. The plugin
+//! builds the runtime state once the asset loads, advances it every frame,
+//! and draws it as child mesh entities.
 //!
 //! # Quick start (2D)
 //!
@@ -8,12 +14,12 @@
 //!
 //! fn setup(mut commands: Commands, asset_server: Res<AssetServer>) {
 //!     commands.spawn(Camera2d);
-//!     let skel: Handle<SpineSkeletonAsset> = asset_server.load_with_settings(
-//!         "spineboy/export/spineboy-pro.skel",
-//!         |s: &mut SpineSkeletonLoaderSettings| {
+//!     let skel: Handle<SpineSkeletonAsset> = asset_server
+//!         .load_builder()
+//!         .with_settings(|s: &mut SpineSkeletonLoaderSettings| {
 //!             s.atlas_path = Some("spineboy/export/spineboy-pma.atlas".into());
-//!         },
-//!     );
+//!         })
+//!         .load("spineboy/export/spineboy-pro.skel");
 //!     commands.spawn(SpineSkeleton::new(skel).with_initial_animation(0, "walk", true));
 //! }
 //!
@@ -27,16 +33,44 @@
 //! # Quick start (3D)
 //!
 //! Spawn a [`SpineRender3d`] marker alongside the [`SpineSkeleton`] and use a
-//! `Camera3d`. The rig is laid out in the entity's local XY plane (z = 0);
-//! rotate the entity's `Transform` to stand it upright. See
+//! `Camera3d`. The rig is laid out in the entity's local XY plane (z = 0),
+//! y-up and facing +Z, so it stands upright with an identity rotation. Spine
+//! units are usually pixels; scale the `Transform` down to scene units. See
 //! `examples/spineboy_walk_3d.rs`.
+//!
+//! # Controlling playback
+//!
+//! [`SpineSkeleton::play`], [`SpineSkeleton::set_skin`], and the
+//! [`time_scale`](SpineSkeleton::time_scale), [`paused`](SpineSkeleton::paused)
+//! and [`physics`](SpineSkeleton::physics) fields cover the common cases. Calls
+//! made before the asset loads are queued. For queueing, mixing and track
+//! entries, use [`SpineSkeleton::animation_state_mut`]; for bones and slots,
+//! [`SpineSkeleton::skeleton_mut`]. Both return `None` until the asset loads.
+//!
+//! Animation events arrive as messages. [`SpineKeyframeEvent`] carries
+//! keyframe events only; [`SpineStateEvent`] carries those plus track-entry
+//! lifecycle events (start, interrupt, end, complete, dispose).
+//!
+//! ```no_run
+//! use bevy::prelude::*;
+//! use spine_bevy::{SpineKeyframeEvent, SpineSkeleton};
+//!
+//! fn log_events(mut events: MessageReader<SpineKeyframeEvent>, skeletons: Query<&SpineSkeleton>) {
+//!     for ev in events.read() {
+//!         let Some(skeleton) = skeletons.get(ev.entity).ok().and_then(|s| s.skeleton()) else {
+//!             continue;
+//!         };
+//!         let name = &skeleton.data().events[ev.event.data.index()].name;
+//!         info!("{name} at {}s", ev.event.time);
+//!     }
+//! }
+//! ```
 //!
 //! # How it fits together
 //!
 //! [`SpinePlugin`] registers the asset loaders, the [`SpineMaterial`]
-//! (`Material2d`) and [`SpineMaterial3d`] (`Material`) plugins, two
-//! `Message` types for animation events, and five chained system sets in
-//! `Update`:
+//! (`Material2d`) and [`SpineMaterial3d`] (`Material`) plugins, the two event
+//! messages, and five chained system sets in `Update`:
 //!
 //! 1. [`SpineSet::EnsureMarkers`]: inserts [`SpineRender2d`] on skeletons
 //!    that carry no render-mode marker.
@@ -52,7 +86,8 @@
 //!    [`SpineStateEvent`] and [`SpineKeyframeEvent`] messages.
 //!
 //! Systems ordered `.before(SpineSet::Tick)` can change `time_scale` or
-//! queue animations and see the result the same frame.
+//! queue animations and see the result the same frame. Systems that read
+//! bone positions should run `.after(SpineSet::Tick)`.
 //!
 //! # Atlas expectations
 //!
@@ -61,8 +96,6 @@
 //! The loaders derive `spineboy.atlas` from `spineboy-pro.skel`, which in
 //! Spine's examples is the straight-alpha atlas; set
 //! [`SpineSkeletonLoaderSettings::atlas_path`] to the PMA variant.
-//!
-//! [`spine_runtime`]: https://github.com/dead-money/spine_runtime
 
 use bevy::asset::AssetApp;
 use bevy::pbr::MaterialPlugin;
@@ -90,8 +123,8 @@ pub use systems::{
     ensure_spine_render_marker, initialize_spine_skeletons, tick_spine_skeletons,
 };
 
-/// Registers Spine assets, materials, messages and systems. Add once, then
-/// spawn [`SpineSkeleton`] components.
+/// Registers Spine assets, loaders, materials, messages and systems. Add
+/// once, then spawn [`SpineSkeleton`] components.
 #[derive(Default)]
 pub struct SpinePlugin;
 

@@ -1,3 +1,5 @@
+//! 2D (`Material2d`) Spine material.
+
 use bevy::asset::embedded_asset;
 use bevy::mesh::MeshVertexBufferLayoutRef;
 use bevy::prelude::*;
@@ -19,7 +21,8 @@ pub struct SpineMaterial {
     /// default render options only batch slots with identical colors.
     #[uniform(0)]
     pub colors: SpineColors,
-    /// The command's atlas page, from `SpineAtlasAsset::pages`.
+    /// The command's atlas page, from
+    /// [`SpineAtlasAsset::pages`](crate::SpineAtlasAsset::pages).
     #[texture(1)]
     #[sampler(2)]
     pub texture: Handle<Image>,

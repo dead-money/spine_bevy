@@ -63,8 +63,8 @@ jobs:
         working-directory: spine_bevy
         run: cargo test --all-targets
 
-      # Makes a re-run of the tag idempotent and lets the manual first publish
-      # be tagged after the fact.
+      # Lets a tag's workflow re-run, or run for a version already published
+      # by hand, without failing.
       - name: Check if version already published
         id: check
         working-directory: spine_bevy

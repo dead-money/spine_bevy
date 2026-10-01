@@ -1,4 +1,11 @@
 //! Asset types and loaders for Spine `.atlas`, `.skel` and `.json` files.
+//!
+//! A skeleton is loaded against an atlas: [`SpineSkeletonLoader`] (`.skel`)
+//! and [`SpineSkeletonJsonLoader`] (`.json`) load the atlas as a dependency,
+//! resolve attachments against it, and produce a [`SpineSkeletonAsset`] that
+//! holds the shared skeleton data and a handle to the [`SpineAtlasAsset`].
+//! The atlas path comes from the loader settings or is derived from the
+//! skeleton's file name; see [`SpineSkeletonLoaderSettings::atlas_path`].
 
 pub mod atlas_loader;
 pub mod skel_json_loader;

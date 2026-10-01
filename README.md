@@ -19,12 +19,12 @@ Built for Dead Money's own games and mostly written by AI agents under human dir
 
 This crate's own code is MIT, but it depends on `spine_runtime`, a translation of Esoteric Software's `spine-cpp` under the [Spine Runtimes License Agreement](https://esotericsoftware.com/spine-runtimes-license). Under Section 2 of the [Spine Editor License Agreement](https://esotericsoftware.com/spine-editor-license):
 
-- **Every developer who builds software with this crate needs their own [Spine Editor license](https://esotericsoftware.com/spine-purchase),** including to build and run the examples. Players of a game you ship don't need one.
-- **Ship the license text.** Include the Spine Runtimes License Agreement in the documentation or other materials that come with your product.
+- Every developer who builds software with this crate needs their own [Spine Editor license](https://esotericsoftware.com/spine-purchase), including to build and run the examples. Players of a game you ship don't need one.
+- Include the Spine Runtimes License Agreement in the documentation or other materials that come with your product.
 
 If you're unsure whether your use is covered, ask Esoteric Software.
 
-This release reads **Spine 4.3** exports, binary (`.skel`) or JSON, each paired with its `.atlas`. 4.2 exports won't load; re-export them from a 4.3 editor.
+This release reads Spine 4.3 exports, binary (`.skel`) or JSON, each paired with its `.atlas`. 4.2 exports won't load; re-export them from a 4.3 editor.
 
 ## Quick start
 
@@ -122,15 +122,15 @@ commands.spawn((SpineSkeleton::new(skeleton), SpineRender3d, Transform::from_xyz
 
 ## Atlases
 
-The materials expect **premultiplied-alpha** textures. Most Spine exports include a `*-pma.atlas` / `*-pma.png` pair beside the regular one; point the loader at it, as in the Quick start. Without settings, the loader looks for an atlas named after the skeleton (dropping `-pro`, `-ess`, or `-ios`). For a straight-alpha atlas, premultiply the PNGs in your asset pipeline.
+The materials expect premultiplied-alpha textures. Most Spine exports include a `*-pma.atlas` / `*-pma.png` pair beside the regular one; point the loader at it, as in the Quick start. Without settings, the loader looks for an atlas named after the skeleton (dropping `-pro`, `-ess`, or `-ios`). For a straight-alpha atlas, premultiply the PNGs in your asset pipeline.
 
 ## Known limitations
 
-**Blending happens in linear color space.** Spine's renderers blend in gamma (sRGB) space, and Bevy blends in linear space. Opaque slots match Spine, but additive and semi-transparent slots come out somewhat different: additive highlights look dimmer and overlapping translucent slots less saturated than in the Spine editor. Matching exactly would mean drawing skeletons into a separate gamma-space target and compositing the result.
+Blending happens in linear color space. Spine's renderers blend in gamma (sRGB) space; Bevy blends in linear space. Opaque slots match Spine, but additive and semi-transparent slots come out somewhat different: additive highlights look dimmer and overlapping translucent slots less saturated than in the Spine editor. Matching exactly would mean drawing skeletons into a separate gamma-space target and compositing the result.
 
 ## Performance
 
-Skeletons update in parallel, and a rig usually draws in a few draw calls; spineboy is typically one. On an i9-14900K, 50 skeletons cost about 0.25 ms of CPU per frame and 1000 about 2.75 ms. Past roughly 1000 on screen, the GPU side becomes the limit. `cargo run --release --example spine_stress` measures it on your machine.
+Skeletons update in parallel. Each render command is one draw call, and the runtime merges adjacent attachments that share a texture, blend mode, and color, so spineboy draws in one. Measured under Bevy 0.18 on an i9-14900K, 50 skeletons cost about 0.25 ms of CPU per frame and 1000 about 2.75 ms; past roughly 500 on screen, render extraction and draw calls dominate the frame. `cargo run --release --example spine_stress` measures it on your machine.
 
 ## Version compatibility
 

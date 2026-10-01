@@ -1,3 +1,5 @@
+//! The JSON `.json` skeleton loader.
+
 use std::sync::Arc;
 
 use bevy::asset::{AssetLoader, AssetPath, LoadContext, io::Reader};
@@ -25,16 +27,21 @@ pub struct SpineSkeletonJsonLoaderSettings {
 #[derive(Default, TypePath)]
 pub struct SpineSkeletonJsonLoader;
 
+/// Why [`SpineSkeletonJsonLoader`] failed.
 #[derive(Debug, Error)]
 pub enum SpineSkeletonJsonLoaderError {
     #[error("io error: {0}")]
     Io(#[from] std::io::Error),
+    /// The skeleton path has no UTF-8 file stem to derive an atlas name from.
     #[error("could not derive atlas path from skeleton path {0:?}")]
     AtlasPathDerivation(String),
+    /// The atlas at the given path failed to load; the second field is the
+    /// asset server's error message.
     #[error("failed to load companion atlas {0:?}: {1}")]
     AtlasLoad(String, String),
     #[error("json skeleton parse error: {0}")]
     Parse(#[from] JsonError),
+    /// The derived atlas path is not a valid asset path.
     #[error("asset path parse error: {0}")]
     Path(#[from] bevy::asset::ParseAssetPathError),
 }

@@ -1,3 +1,5 @@
+//! The binary `.skel` skeleton loader.
+
 use std::sync::Arc;
 
 use bevy::asset::{AssetLoader, AssetPath, LoadContext, io::Reader};
@@ -10,8 +12,10 @@ use spine_runtime::load::{AtlasAttachmentLoader, BinaryError, SkeletonBinary};
 
 use crate::asset::atlas_loader::SpineAtlasAsset;
 
-/// Loaded skeleton data, shared by every [`crate::SpineSkeleton`] spawned
-/// from it, and the atlas it was loaded against.
+/// Loaded skeleton data, shared by every [`SpineSkeleton`](crate::SpineSkeleton)
+/// spawned from it, and the atlas it was loaded against. Produced by both
+/// [`SpineSkeletonLoader`] and
+/// [`SpineSkeletonJsonLoader`](crate::SpineSkeletonJsonLoader).
 #[derive(Asset, TypePath, Debug)]
 pub struct SpineSkeletonAsset {
     pub data: Arc<SkeletonData>,
@@ -35,16 +39,21 @@ pub struct SpineSkeletonLoaderSettings {
 #[derive(Default, TypePath)]
 pub struct SpineSkeletonLoader;
 
+/// Why [`SpineSkeletonLoader`] failed.
 #[derive(Debug, Error)]
 pub enum SpineSkeletonLoaderError {
     #[error("io error: {0}")]
     Io(#[from] std::io::Error),
+    /// The skeleton path has no UTF-8 file stem to derive an atlas name from.
     #[error("could not derive atlas path from skeleton path {0:?}")]
     AtlasPathDerivation(String),
+    /// The atlas at the given path failed to load; the second field is the
+    /// asset server's error message.
     #[error("failed to load companion atlas {0:?}: {1}")]
     AtlasLoad(String, String),
     #[error("binary skeleton parse error: {0}")]
     Parse(#[from] BinaryError),
+    /// The derived atlas path is not a valid asset path.
     #[error("asset path parse error: {0}")]
     Path(#[from] bevy::asset::ParseAssetPathError),
 }

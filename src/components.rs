@@ -1,3 +1,6 @@
+//! The [`SpineSkeleton`] component, its runtime state, and the render-mode
+//! markers.
+
 use bevy::prelude::*;
 
 use spine_runtime::animation::{AnimationState, Event};
@@ -29,11 +32,14 @@ pub struct SpineRender3d;
 #[require(Transform, Visibility)]
 pub struct SpineSkeleton {
     /// Strong handle; keeps the asset loaded while the component exists.
+    /// Replacing it after init keeps the old runtime state; spawn a new
+    /// entity to switch assets.
     pub asset: Handle<SpineSkeletonAsset>,
     /// `None` until [`crate::systems::initialize_spine_skeletons`] runs after
     /// the asset loads.
     pub state: Option<SpineSkeletonState>,
-    /// Multiplies `Time::delta_secs` for animation and physics.
+    /// Multiplies `Time::delta_secs` for animation and physics. 0 freezes
+    /// time but keeps applying and rendering the pose.
     pub time_scale: f32,
     /// Passed to [`Skeleton::update_world_transform`] each tick.
     pub physics: Physics,
