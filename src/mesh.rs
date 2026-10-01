@@ -204,10 +204,15 @@ fn empty_mesh() -> Mesh {
     )
 }
 
+/// Premultiplies both colors by the light alpha, as the PMA shaders expect.
+/// The runtime packs them straight, like spine-cpp.
 fn colors_from_command(cmd: &RenderCommand) -> SpineColors {
+    let light = unpack_argb(cmd.colors.first().copied().unwrap_or(0xffff_ffff));
+    let dark = unpack_argb(cmd.dark_colors.first().copied().unwrap_or(0xff00_0000));
+    let a = light.w;
     SpineColors {
-        light: unpack_argb(cmd.colors.first().copied().unwrap_or(0xffff_ffff)),
-        dark: unpack_argb(cmd.dark_colors.first().copied().unwrap_or(0xff00_0000)),
+        light: Vec4::new(light.x * a, light.y * a, light.z * a, a),
+        dark: Vec4::new(dark.x * a, dark.y * a, dark.z * a, dark.w),
     }
 }
 

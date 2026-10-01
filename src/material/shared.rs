@@ -12,10 +12,10 @@ use spine_runtime::data::BlendMode;
 /// `SpineColors` in both WGSL shaders, at binding 0 of the material group.
 #[derive(ShaderType, Clone, Copy, Debug, Default)]
 pub struct SpineColors {
-    /// Straight-alpha RGBA from `RenderCommand::colors`.
+    /// `RenderCommand::colors`, RGB premultiplied by alpha.
     pub light: Vec4,
-    /// RGB from `RenderCommand::dark_colors`; black when the slot has no
-    /// dark color. The shaders ignore `dark.a`.
+    /// `RenderCommand::dark_colors`, RGB premultiplied by the light alpha;
+    /// black when the slot has no dark color. Alpha is always 1.
     pub dark: Vec4,
 }
 
