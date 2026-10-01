@@ -1,18 +1,5 @@
-//! Helpers shared by the Bevy crate's examples. Cargo can't directly link
-//! a single helper crate from `examples/`, so each example does
-//! `mod common;` to pull this in.
-//!
-//! What lives here:
-//!
-//! - [`resolve_asset_root`] — `--assets` / `$SPINE_EXAMPLES_DIR` /
-//!   sibling-clone fallback chain, plus canonicalisation so `AssetPlugin`
-//!   doesn't resolve relative to the binary's directory.
-//! - [`discover_rigs`] — walks `<root>/<rig>/export/*.skel` and pairs each
-//!   skeleton with its preferred (PMA-first) atlas.
-//! - [`aggregate_bounds`] — `RenderCommand`-stream AABB used by both
-//!   `spine_browser` (live-fit camera) and `spine_stress` (cell sizing).
-//! - [`install_screenshot_driver`] — opt-in headless screenshot mode used
-//!   for CI / docs.
+//! Helpers shared by the examples, pulled in with `mod common;`: asset-root
+//! resolution, rig discovery, render-command bounds, and a screenshot driver.
 
 #![allow(dead_code)] // Each example uses a subset of the helpers.
 
@@ -24,11 +11,8 @@ use bevy::render::view::screenshot::{Screenshot, save_to_disk};
 
 use spine_bevy::SpineSkeletonState;
 
-// ---- Asset root + rig discovery ------------------------------------------
-
-/// One discoverable rig variant. `skel_relpath` and `atlas_relpath` are
-/// relative to the resolved asset root and ready to hand to
-/// `AssetServer::load_with_settings`.
+/// One skeleton export and its atlas. Paths are relative to the asset root,
+/// ready to pass to the `AssetServer`.
 #[derive(Clone, Debug)]
 pub struct RigEntry {
     pub label: String,
@@ -36,15 +20,12 @@ pub struct RigEntry {
     pub atlas_relpath: String,
 }
 
-/// Resolve the asset root from (in order): an explicit `--assets <path>`
-/// from the caller's CLI, the `SPINE_EXAMPLES_DIR` env var, or a
-/// sibling clone of the upstream `spine-runtimes/examples` directory.
-/// The returned path is always canonicalised; `AssetPlugin::file_path`
-/// is interpreted relative to the binary at runtime, so a non-canonical
-/// "../spine-runtimes/examples" would resolve from `target/release/examples/`.
+/// Resolves the asset root from `cli_assets`, then `SPINE_EXAMPLES_DIR`, then
+/// `../spine-runtimes/examples` or `./spine-runtimes/examples`.
 ///
-/// On failure, returns a generic message; the caller is expected to
-/// prepend its own program-name prefix.
+/// The path is canonicalized because `AssetPlugin` resolves a relative
+/// `file_path` against its own base directory, not the current directory.
+/// The error message has no program-name prefix; callers add one.
 pub fn resolve_asset_root(cli_assets: Option<PathBuf>) -> Result<PathBuf, String> {
     if let Some(p) = cli_assets {
         return validate_root(p);
@@ -85,8 +66,8 @@ The expected source is the upstream spine-runtimes repo:
 
 (Spine example art is licensed separately from this crate and is not bundled.)";
 
-/// Walk `<root>/<rig>/export/` and yield one [`RigEntry`] per `.skel`
-/// file paired with the closest matching atlas (PMA preferred).
+/// Returns one [`RigEntry`] per `<root>/<rig>/export/*.skel` that has a
+/// matching atlas, sorted by label.
 pub fn discover_rigs(root: &Path) -> Vec<RigEntry> {
     let mut out = Vec::new();
     let Ok(rig_dirs) = std::fs::read_dir(root) else {
@@ -134,9 +115,8 @@ pub fn discover_rigs(root: &Path) -> Vec<RigEntry> {
     out
 }
 
-/// Find the best atlas for a skeleton with the given stem. PMA variant
-/// preferred. Tries `<base>-pma.atlas` then `<base>.atlas`, where `<base>`
-/// is the stem with trailing `-pro`/`-ess`/`-ios` stripped.
+/// Tries `<base>-pma.atlas`, then `<base>.atlas`, where `<base>` is the stem
+/// without a trailing `-pro`, `-ess`, or `-ios`.
 fn pick_atlas(export: &Path, skel_stem: &str) -> Option<PathBuf> {
     let base = ["-pro", "-ess", "-ios"]
         .into_iter()
@@ -158,12 +138,8 @@ fn relpath(root: &Path, p: &Path) -> String {
         .replace('\\', "/")
 }
 
-// ---- Render-command bounds -----------------------------------------------
-
-/// Aggregate AABB over the skeleton's most recent `RenderCommand` stream
-/// (`(min, max)`). Returns `None` for skeletons with no visible geometry
-/// — typically because the asset hasn't loaded yet or every command in
-/// the frame is empty.
+/// `(min, max)` of the skeleton's latest render commands, or `None` when no
+/// command has geometry.
 pub fn aggregate_bounds(state: &SpineSkeletonState) -> Option<(Vec2, Vec2)> {
     let mut have_any = false;
     let mut xmin = f32::INFINITY;
@@ -182,8 +158,6 @@ pub fn aggregate_bounds(state: &SpineSkeletonState) -> Option<(Vec2, Vec2)> {
     have_any.then_some((Vec2::new(xmin, ymin), Vec2::new(xmax, ymax)))
 }
 
-// ---- Headless screenshot driver ------------------------------------------
-
 #[derive(Resource)]
 struct ScreenshotState {
     path: String,
@@ -192,18 +166,15 @@ struct ScreenshotState {
     taken: bool,
 }
 
-/// Resolved configuration for [`install_screenshot_driver`]. Build via
-/// [`ScreenshotConfig::from_env`] for env-var-driven examples, or
-/// directly when the example wants to default a value.
+/// Output path and trigger frame for [`install_screenshot_driver`].
 pub struct ScreenshotConfig {
     pub path: String,
     pub trigger_frame: u32,
 }
 
 impl ScreenshotConfig {
-    /// Read `(env_path, env_frames)` and return `Some(config)` if the
-    /// path env var is set; otherwise `None`. `env_frames` is parsed as
-    /// `u32`, falling back to `default_frames` on missing / unparseable.
+    /// Returns `None` unless the `env_path` variable is set. A missing or
+    /// unparseable `env_frames` falls back to `default_frames`.
     pub fn from_env(env_path: &str, env_frames: &str, default_frames: u32) -> Option<Self> {
         let path = std::env::var(env_path).ok()?;
         let trigger_frame = std::env::var(env_frames)
@@ -217,9 +188,8 @@ impl ScreenshotConfig {
     }
 }
 
-/// Schedule a one-shot window screenshot at frame `cfg.trigger_frame`
-/// to `cfg.path`, then exit the app after a short grace period for the
-/// async PNG write to finish.
+/// Saves one window screenshot to `cfg.path` at frame `cfg.trigger_frame`,
+/// then exits 30 frames later so the async PNG write can finish.
 pub fn install_screenshot_driver(app: &mut App, cfg: ScreenshotConfig) {
     app.insert_resource(ScreenshotState {
         path: cfg.path,

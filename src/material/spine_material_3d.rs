@@ -1,12 +1,5 @@
-//! 3D (`Material`) flavor of the Spine material. Spawned by
-//! [`crate::mesh::build_spine_meshes_3d`] for skeletons tagged with
-//! [`crate::components::SpineRender3d`]. The fragment math (tint-black over
-//! a PMA atlas sample) is identical to the 2D material; the differences
-//! are the trait impl, the WGSL imports, and the vertex-stage plumbing.
-//!
-//! Deliberately unlit: Spine's light/dark color channels already bake
-//! authored lighting, and atlas samples are premultiplied by their own
-//! alpha. Layering PBR lighting on top would double-count both.
+//! 3D (`Material`) version of the Spine material. Unlit: Spine colors are
+//! authored tints, not surfaces to light.
 
 use bevy::asset::embedded_asset;
 use bevy::mesh::MeshVertexBufferLayoutRef;
@@ -19,13 +12,9 @@ use bevy::shader::ShaderRef;
 
 use crate::material::shared::{SpineBlendMode, SpineColors, SpineMaterialKey};
 
-/// 3D material emitted by [`crate::mesh::build_spine_meshes_3d`] for each
-/// batched `RenderCommand` on entities tagged with
-/// [`crate::components::SpineRender3d`].
-///
-/// Mirrors [`crate::SpineMaterial`] at the bind-group level — same layout,
-/// same uniform, same texture slot, same specialization key — so the build
-/// system can share color/texture/blend update code across both backends.
+/// 3D material for one render command of a
+/// [`SpineRender3d`](crate::SpineRender3d) skeleton. Same fields and bindings
+/// as [`SpineMaterial`](crate::SpineMaterial).
 #[derive(Asset, AsBindGroup, TypePath, Clone, Debug)]
 #[bind_group_data(SpineMaterialKey)]
 pub struct SpineMaterial3d {
@@ -70,9 +59,7 @@ impl Material for SpineMaterial3d {
         AlphaMode::Blend
     }
 
-    // Spine geometry is translucent / hand-authored; the shadow and depth
-    // prepasses would discard fragments we want rendered and sort poorly
-    // against the main transparent pass. Turn both off.
+    // Translucent geometry: keep it out of the depth prepass and shadows.
     fn enable_prepass() -> bool {
         false
     }
@@ -93,25 +80,19 @@ impl Material for SpineMaterial3d {
         {
             target.blend = Some(blend);
         }
-        // Spine slot Z-offsets (see `Z_OFFSET_PER_COMMAND` in mesh.rs) are
-        // smaller than typical depth precision; let the transparent pass
-        // sort by camera distance and disable depth writes so slots layer
-        // correctly regardless of submission order.
+        // Commands sit only `Z_OFFSET_PER_COMMAND` apart; without depth
+        // writes, draw order comes from the transparent sort alone.
         if let Some(depth_stencil) = descriptor.depth_stencil.as_mut() {
             depth_stencil.depth_write_enabled = Some(false);
         }
-        // Spine meshes are single-sided and can wind either way depending
-        // on skeleton flips, skin swaps, and bone chains crossing over
-        // themselves. The 2D (`Material2d`) pipeline doesn't cull; match
-        // that here so the rig stays visible from both sides as the
-        // camera orbits.
+        // Winding flips with negative scale, and the rig should be visible
+        // from behind, as in 2D.
         descriptor.primitive.cull_mode = None;
         Ok(())
     }
 }
 
-/// Register the 3D WGSL shader with Bevy's embedded asset source. Called by
-/// [`crate::SpinePlugin`] during `build`.
+/// Embeds `spine_3d.wgsl`.
 pub(crate) fn register_spine_shader_3d(app: &mut App) {
     embedded_asset!(app, "spine_3d.wgsl");
 }

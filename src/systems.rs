@@ -11,42 +11,30 @@ use spine_runtime::skeleton::{Physics, Skeleton};
 use crate::asset::SpineSkeletonAsset;
 use crate::components::{SpineRender2d, SpineRender3d, SpineSkeleton, SpineSkeletonState};
 
-/// Stages run each frame on a [`SpineSkeleton`]. Gameplay code ordering
-/// itself `.before(SpineSet::Tick)` can mutate `time_scale` / queue
-/// animations on the same frame they take effect.
+/// The plugin's system sets, chained in this order in `Update`.
 #[derive(SystemSet, Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum SpineSet {
-    /// Backfill missing render-mode markers ([`SpineRender2d`] /
-    /// [`SpineRender3d`]) on freshly-spawned skeleton entities. Runs
-    /// before [`Self::Init`] so the marker is visible to every later
-    /// stage and to the marker-filtered mesh-build systems.
+    /// Inserts [`SpineRender2d`] on skeletons with no render-mode marker.
     EnsureMarkers,
-    /// First-frame construction of [`SpineSkeletonState`] once the asset
-    /// finishes loading.
+    /// Builds [`SpineSkeletonState`] once the asset has loaded.
     Init,
-    /// Advance animation time, apply timelines, recompute world transforms,
-    /// rebuild the render-command stream.
+    /// Advances and applies animations, updates world transforms, renders.
     Tick,
-    /// Consume the frame's render commands into Bevy meshes + materials.
+    /// Writes the frame's render commands into meshes and materials.
     BuildMeshes,
-    /// Drain per-entry lifecycle + keyframe events into the
-    /// [`crate::SpineStateEvent`] / [`crate::SpineKeyframeEvent`] message
-    /// writers. Runs after [`Self::Tick`].
+    /// Forwards events as [`SpineStateEvent`] and [`SpineKeyframeEvent`]
+    /// messages.
     Events,
 }
 
-/// Marker component inserted on a [`SpineSkeleton`] entity once its asset
-/// has loaded and [`initialize_spine_skeletons`] has constructed the
-/// runtime state. Lets later systems (and the init system itself) skip
-/// the entity using a `Without<SpineInitialized>` filter rather than
-/// scanning all skeletons every frame.
+/// Inserted by [`initialize_spine_skeletons`] once a skeleton's runtime state
+/// exists.
 #[derive(Component, Debug, Clone, Copy)]
 pub struct SpineInitialized;
 
-/// Constructs runtime state for any [`SpineSkeleton`] whose asset has
-/// finished loading: builds the [`Skeleton`], applies any pending
-/// animation / skin, and inserts a [`SpineInitialized`] marker. Once
-/// marked, the entity is filtered out of subsequent runs.
+/// Builds the [`Skeleton`] and [`AnimationState`] for each uninitialized
+/// [`SpineSkeleton`] whose asset has loaded, applies the pending animation
+/// and skin (logging failures), and inserts [`SpineInitialized`].
 pub fn initialize_spine_skeletons(
     mut commands: Commands,
     mut query: Query<(Entity, &mut SpineSkeleton), Without<SpineInitialized>>,
@@ -98,12 +86,8 @@ pub fn initialize_spine_skeletons(
     }
 }
 
-/// Backfill [`SpineRender2d`] on every [`SpineSkeleton`] that doesn't yet
-/// carry either render-mode marker. Keeps the default path
-/// (plain `commands.spawn(SpineSkeleton::new(...))`) rendering through the
-/// 2D pipeline, so existing code keeps compiling and working after 3D
-/// support lands. Runs before [`SpineSet::Init`] so the init stage and
-/// marker-filtered mesh-build systems see a consistent world state.
+/// Inserts [`SpineRender2d`] on every [`SpineSkeleton`] that has neither
+/// render-mode marker, making 2D the default.
 #[allow(clippy::type_complexity)]
 pub fn ensure_spine_render_marker(
     mut commands: Commands,
@@ -121,17 +105,10 @@ pub fn ensure_spine_render_marker(
     }
 }
 
-/// Advance one frame on every initialized skeleton: update animation
-/// state, apply timelines, re-integrate world transforms, emit the
-/// frame's render commands into the internal buffer on
-/// [`SkeletonRenderer`]. Read the commands via
-/// `state.renderer.commands()` in [`SpineSet::BuildMeshes`].
-///
-/// Iterates skeletons in parallel via Bevy's `par_iter_mut`. Each
-/// skeleton's runtime state is owned by its component; the only shared
-/// data is the read-only `Arc<SkeletonData>`, so per-skeleton work is
-/// embarrassingly parallel and scales near-linearly with cores at
-/// realistic skeleton counts.
+/// Advances each unpaused, initialized skeleton by `delta_secs * time_scale`:
+/// updates and applies its [`AnimationState`], collects keyframe events,
+/// updates world transforms with the component's [`Physics`] mode, and
+/// renders into its [`SkeletonRenderer`]. Runs in parallel over skeletons.
 pub fn tick_spine_skeletons(
     time: Res<Time>,
     mut query: Query<&mut SpineSkeleton, With<SpineInitialized>>,
@@ -159,29 +136,26 @@ pub fn tick_spine_skeletons(
     });
 }
 
-/// One lifecycle / keyframe event pulled off a [`SpineSkeleton`] after the
-/// tick system ran. Carries the source entity so listeners that span
-/// multiple skeletons can disambiguate. Bevy 0.18 renamed the plain
-/// buffered-event type to `Message`; this is a `Message` despite the
-/// historical `Event` suffix in the name.
+/// A track-entry lifecycle event, or a keyframe event wrapped as
+/// `EventType::Event`, from the skeleton on `entity`. Read with a
+/// `MessageReader`.
 #[derive(Message, Debug, Clone)]
 pub struct SpineStateEvent {
     pub entity: Entity,
     pub event: StateEvent,
 }
 
-/// One animation keyframe event (spine-cpp `Event`) pulled off the per-frame
-/// event buffer. Fired alongside [`SpineStateEvent`] with
-/// `StateEvent::kind == EventType::Event`, but split out for consumers that
-/// only care about keyframes.
+/// A keyframe event from the skeleton on `entity`. The same event also
+/// arrives as a [`SpineStateEvent`] with `EventType::Event`; this message is
+/// for readers that want only keyframes.
 #[derive(Message, Debug, Clone)]
 pub struct SpineKeyframeEvent {
     pub entity: Entity,
     pub event: SpineEvent,
 }
 
-/// Drain per-skeleton events into Bevy's message system. Runs in
-/// [`SpineSet::Events`], after [`SpineSet::Tick`].
+/// Drains each skeleton's state and keyframe events into
+/// [`SpineStateEvent`] and [`SpineKeyframeEvent`] messages.
 pub fn drain_spine_events(
     mut query: Query<(Entity, &mut SpineSkeleton)>,
     mut state_writer: MessageWriter<SpineStateEvent>,

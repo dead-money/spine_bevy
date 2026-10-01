@@ -10,36 +10,28 @@ use spine_runtime::load::{AtlasAttachmentLoader, BinaryError, SkeletonBinary};
 
 use crate::asset::atlas_loader::SpineAtlasAsset;
 
-/// Spine skeleton asset wrapping the shared `Arc<SkeletonData>` and a handle
-/// to the atlas it was loaded against. Instances clone the `Arc` cheaply.
+/// Loaded skeleton data, shared by every [`crate::SpineSkeleton`] spawned
+/// from it, and the atlas it was loaded against.
 #[derive(Asset, TypePath, Debug)]
 pub struct SpineSkeletonAsset {
-    /// Immutable parsed skeleton data. Shared across all `Skeleton` instances
-    /// spawned from this asset.
     pub data: Arc<SkeletonData>,
-    /// Handle to the atlas used during attachment resolution. The Bevy-side
-    /// renderer uses this to pull `Vec<Handle<Image>>` for page lookups.
+    /// Supplies the page images at draw time.
     pub atlas: Handle<SpineAtlasAsset>,
 }
 
-/// Per-load overrides for the skeleton loader. When `atlas_path` is `None`
-/// (the default), the loader derives the atlas path from the skeleton's
-/// filename stem — stripping trailing `-pro`/`-ess`/`-ios` suffixes where
-/// present, then appending `.atlas`. This matches the naming convention used
-/// by every rig under `spine-runtimes/examples/`.
+/// Per-load settings for [`SpineSkeletonLoader`].
 #[derive(Clone, Default, Debug, Serialize, Deserialize)]
 pub struct SpineSkeletonLoaderSettings {
-    /// Absolute asset path of the atlas, or `None` to auto-derive.
+    /// Atlas asset path from the asset root, or `None` to derive it from the
+    /// skeleton path: strip a `-pro`, `-ess` or `-ios` suffix from the stem
+    /// and append `.atlas` (`spineboy-pro.skel` gives `spineboy.atlas`).
     pub atlas_path: Option<String>,
-    /// Uniform scale applied to vertex coordinates at load time. `None` keeps
-    /// the skeleton's native scale. Forwarded to `SkeletonBinary::with_scale`.
+    /// Load-time scale for positions and sizes. `None` means 1.0.
     pub scale: Option<f32>,
 }
 
-/// Bevy asset loader for `.skel` files. Loads the companion atlas
-/// (resolved via [`SpineSkeletonLoaderSettings::atlas_path`] or derived
-/// from the skeleton's filename stem), runs the binary skeleton parser
-/// against it, and yields a [`SpineSkeletonAsset`].
+/// Loads binary `.skel` skeletons and their atlas into a
+/// [`SpineSkeletonAsset`].
 #[derive(Default, TypePath)]
 pub struct SpineSkeletonLoader;
 
@@ -82,11 +74,9 @@ impl AssetLoader for SpineSkeletonLoader {
 
         let atlas_path = resolve_atlas_path(load_context.path(), settings.atlas_path.as_deref())?;
 
-        // Two loads on the same path: the `immediate` load gives us the owned
-        // atlas value (needed to run the attachment loader here, synchronously),
-        // and the `deferred` load yields a `Handle<SpineAtlasAsset>` we stash on
-        // the asset for downstream texture-handle resolution. The asset server
-        // dedupes these — same path, one load.
+        // The handle keeps the atlas (and its page images) in the asset server
+        // for drawing; `load_value` gives the parsed atlas needed to resolve
+        // attachments now.
         let atlas_handle: Handle<SpineAtlasAsset> = load_context.load(atlas_path.clone());
 
         let loaded_atlas = load_context
@@ -116,9 +106,6 @@ impl AssetLoader for SpineSkeletonLoader {
     }
 }
 
-/// Derive the atlas asset path for a `.skel` path, honouring an explicit
-/// override. Strip common rig-suffix variants (`-pro`, `-ess`, `-ios`) before
-/// appending `.atlas`: `spineboy-pro.skel` -> `spineboy.atlas`.
 fn resolve_atlas_path(
     skel_path: &AssetPath<'static>,
     override_path: Option<&str>,

@@ -1,8 +1,5 @@
-//! Render-backend-agnostic pieces reused by both the 2D (`Material2d`) and
-//! 3D (`Material`) flavors of the Spine material. The blend-state tables,
-//! color uniform layout, and per-pipeline specialization key are identical
-//! in both pipelines; only the trait implementations and shader imports
-//! differ.
+//! Uniform layout, blend states and pipeline key shared by the 2D and 3D
+//! materials.
 
 use bevy::prelude::*;
 use bevy::render::render_resource::{
@@ -11,21 +8,18 @@ use bevy::render::render_resource::{
 
 use spine_runtime::data::BlendMode;
 
-/// Per-material uniform carrying the slot's light + dark tint as
-/// premultiplied RGBA. Matches the `SpineColors` struct in the shaders at
-/// `@group(2) @binding(0)`.
+/// A render command's light and dark (tint-black) colors. Must match
+/// `SpineColors` in both WGSL shaders, at binding 0 of the material group.
 #[derive(ShaderType, Clone, Copy, Debug, Default)]
 pub struct SpineColors {
-    /// Light tint, premultiplied-alpha. The runtime produces this
-    /// premultiplied already (color packing in `RenderCommand::colors`).
+    /// Straight-alpha RGBA from `RenderCommand::colors`.
     pub light: Vec4,
-    /// Tint-black (`darkColor` in spine-cpp). Alpha byte is always `0xff`
-    /// on the CPU side; the shader never reads `dark.a`.
+    /// RGB from `RenderCommand::dark_colors`; black when the slot has no
+    /// dark color. The shaders ignore `dark.a`.
     pub dark: Vec4,
 }
 
-/// Bevy-side mirror of `spine_runtime::data::BlendMode`. Lives in the
-/// plugin crate so the runtime crate doesn't take a `bevy` dep.
+/// [`BlendMode`] as a pipeline-key value.
 #[repr(u8)]
 #[derive(Copy, Clone, Hash, Eq, PartialEq, Default, Debug)]
 pub enum SpineBlendMode {
@@ -48,9 +42,7 @@ impl From<BlendMode> for SpineBlendMode {
 }
 
 impl SpineBlendMode {
-    /// wgpu blend-state for PMA atlases, by Spine blend mode.
-    ///
-    /// All four modes use `BlendOperation::Add` for both color and alpha.
+    /// Blend state for premultiplied-alpha output.
     #[must_use]
     pub fn blend_state(self) -> BlendState {
         let color = match self {
@@ -92,9 +84,8 @@ impl SpineBlendMode {
     }
 }
 
-/// Specialization key shared by the 2D and 3D materials: one pipeline per
-/// blend mode. The Material2d and Material trait impls both promote this
-/// via `#[bind_group_data(SpineMaterialKey)]`.
+/// Pipeline specialization key for both materials: one pipeline per blend
+/// mode.
 #[repr(C)]
 #[derive(Copy, Clone, Hash, Eq, PartialEq, Debug)]
 pub struct SpineMaterialKey {

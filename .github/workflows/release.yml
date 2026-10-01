@@ -42,9 +42,7 @@ jobs:
           # Match spine_runtime's pin (upstream/4.3); bump together.
           ref: ba17cf88b198c6531c6c51d8d4e1e4b3c3ab47dd
 
-      # Bevy's wgpu / winit / alsa deps need a handful of system
-      # libraries even when we never actually open a window during
-      # `cargo test`.
+      # Needed to build Bevy's wgpu / winit / alsa deps, even headless.
       - name: Install Linux system deps
         run: |
           sudo apt-get update

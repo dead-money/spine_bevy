@@ -1,20 +1,12 @@
-//! 3D sibling of `spineboy_walk`: loads spineboy-pro, plays the `walk`
-//! animation, and renders it through the 3D `Material` pipeline instead
-//! of the 2D `Material2d` pipeline. A Camera3d with perspective
-//! projection orbits a checkered ground plane so the rig clearly sits in
-//! a 3D scene rather than a flat sprite canvas.
-//!
-//! Run from `spine_bevy/`:
+//! `spineboy_walk` drawn through the 3D pipeline ([`SpineRender3d`]), standing
+//! on a ground plane under a perspective camera that orbits the rig.
 //!
 //! ```bash
 //! cargo run --example spineboy_walk_3d
 //! ```
 //!
-//! Controls: none — the camera orbits on its own. Esc to quit.
-//!
-//! For CI / visual-regression use, set `SPINE_SCREENSHOT_3D` to a path to
-//! drop a PNG after `SPINE_SCREENSHOT_3D_FRAMES` (default 90) frames and
-//! exit.
+//! Set `SPINE_SCREENSHOT_3D` to a PNG path to capture one frame after
+//! `SPINE_SCREENSHOT_3D_FRAMES` (default 90) frames and exit.
 
 use std::f32::consts::TAU;
 
@@ -27,21 +19,12 @@ use spine_bevy::{
 
 mod common;
 
-// Spineboy is authored ~400 units tall with origin at the feet. Scale
-// the whole skeleton down to ~2 units tall in the 3D scene — roughly
-// human-height next to the 20×20 ground plane, large enough to read
-// clearly against the perspective camera.
+/// Maps spineboy (about 400 units tall) to about 2 scene units.
 const SKELETON_SCALE: f32 = 0.005;
-/// How far the orbiting camera sits from the skeleton. Tuned so the rig
-/// fills a comfortable fraction of the frame without clipping.
 const CAMERA_RADIUS: f32 = 6.0;
-/// Camera height above the ground. Puts the eye a bit above the top of
-/// the rig so the ground plane is visible and the scene reads as 3D.
 const CAMERA_HEIGHT: f32 = 3.0;
-/// Camera look-at target — midway up the skeleton so the rig is framed.
 const CAMERA_TARGET: Vec3 = Vec3::new(0.0, 1.2, 0.0);
 
-/// Tag the camera rig we orbit each frame.
 #[derive(Component)]
 struct OrbitCamera;
 
@@ -77,9 +60,6 @@ fn setup(
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<StandardMaterial>>,
 ) {
-    // Camera starts slightly off-axis so the first frame already reads
-    // as 3D (not a flat elevation). `orbit_camera` sweeps it around the
-    // Y axis at a slow rate each frame.
     let start = Vec3::new(CAMERA_RADIUS * 0.5, CAMERA_HEIGHT, CAMERA_RADIUS * 0.87);
     commands.spawn((
         Camera3d::default(),
@@ -87,10 +67,7 @@ fn setup(
         OrbitCamera,
     ));
 
-    // Single directional light. The SpineMaterial3d is unlit — Spine
-    // color channels already carry authored lighting — but a real 3D
-    // scene has lights, and the light plus the ground shading sell the
-    // "this is a 3D scene" cue the example exists for.
+    // Lights only the ground; `SpineMaterial3d` is unlit.
     commands.spawn((
         DirectionalLight {
             illuminance: 6_000.0,
@@ -100,7 +77,6 @@ fn setup(
         Transform::from_xyz(4.0, 8.0, 4.0).looking_at(Vec3::ZERO, Vec3::Y),
     ));
 
-    // Ground plane + subtle ambient light so the scene reads as 3D.
     commands.spawn((
         Mesh3d(meshes.add(Plane3d::default().mesh().size(20.0, 20.0))),
         MeshMaterial3d(materials.add(StandardMaterial {
@@ -111,9 +87,7 @@ fn setup(
         Transform::from_xyz(0.0, 0.0, 0.0),
     ));
 
-    // Override the atlas path to the PMA variant — the shader assumes
-    // premultiplied-alpha textures, which the stock `spineboy.atlas` is
-    // not. `-pma.png` ships pre-multiplied.
+    // The materials expect premultiplied alpha; the stock `spineboy.atlas` is straight.
     let skel_handle: Handle<SpineSkeletonAsset> = asset_server
         .load_builder()
         .with_settings(|settings: &mut SpineSkeletonLoaderSettings| {
@@ -121,10 +95,7 @@ fn setup(
         })
         .load("spineboy/export/spineboy-pro.skel");
 
-    // The Spine runtime emits positions in the skeleton's local XY
-    // plane. No extra rotation needed — the skeleton's +Y already points
-    // up the way a 3D scene expects. Scale alone maps authored pixels to
-    // scene units.
+    // Spine is y-up in the XY plane, so the rig stands upright without rotation.
     commands.spawn((
         SpineSkeleton::new(skel_handle).with_initial_animation(0, "walk", true),
         SpineRender3d,
@@ -136,8 +107,7 @@ fn orbit_camera(time: Res<Time>, mut q: Query<&mut Transform, With<OrbitCamera>>
     let Ok(mut tf) = q.single_mut() else {
         return;
     };
-    // Slow ~18-second full revolution. Starting offset matches the
-    // initial transform so the first frame of orbit continues smoothly.
+    // About 18 s per revolution.
     let angle = (time.elapsed_secs() * 0.35 + TAU / 6.0) % TAU;
     tf.translation = Vec3::new(
         angle.sin() * CAMERA_RADIUS,

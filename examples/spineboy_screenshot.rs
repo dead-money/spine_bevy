@@ -1,7 +1,5 @@
-//! Non-interactive sibling of `spineboy_walk`. Spawns the same scene,
-//! waits for the asset to finish loading + a handful of tick-and-render
-//! frames, then screenshots the window and exits. Useful for CI / visual
-//! comparisons in environments where a human isn't watching.
+//! The `spineboy_walk` scene, screenshotted to a PNG after a fixed number of
+//! frames. The app then exits.
 //!
 //! ```bash
 //! cargo run --example spineboy_screenshot
@@ -9,8 +7,8 @@
 //! ```
 //!
 //! Environment:
-//! - `SPINE_SCREENSHOT` — output PNG path (default `spineboy_screenshot.png`).
-//! - `SPINE_SCREENSHOT_FRAMES` — frame number to shoot on (default `60`).
+//! - `SPINE_SCREENSHOT`: output PNG path (default `spineboy_screenshot.png`).
+//! - `SPINE_SCREENSHOT_FRAMES`: frame to capture on (default `60`).
 
 use bevy::asset::AssetPlugin;
 use bevy::prelude::*;
@@ -35,8 +33,6 @@ fn main() {
     .add_plugins(SpinePlugin)
     .add_systems(Startup, setup);
 
-    // This example exists *for* the screenshot, so always install with
-    // a sensible default path if the env var is unset.
     let cfg = common::ScreenshotConfig::from_env("SPINE_SCREENSHOT", "SPINE_SCREENSHOT_FRAMES", 60)
         .unwrap_or(common::ScreenshotConfig {
             path: "spineboy_screenshot.png".to_string(),

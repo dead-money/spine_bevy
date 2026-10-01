@@ -1,6 +1,5 @@
-//! Headless smoke test: SpinePlugin registers, systems wire into Update,
-//! and one frame of a pending-asset skeleton doesn't panic on the `None`
-//! state branch.
+//! Headless smoke test: `SpinePlugin` builds and runs frames with a skeleton
+//! whose asset never loads.
 
 use bevy::asset::AssetPlugin;
 use bevy::mesh::MeshPlugin;
@@ -16,9 +15,7 @@ fn plugin_builds_and_ticks_an_empty_skeleton_component() {
         .add_plugins(MeshPlugin)
         .add_plugins(SpinePlugin);
 
-    // Spawn a component whose asset handle is default (never-loaded). Init
-    // should observe `None` from Assets::get and leave state = None; tick
-    // and mesh-build should skip; no panics.
+    // A never-loaded handle exercises every system's no-state branch.
     let handle: Handle<SpineSkeletonAsset> = Handle::default();
     app.world_mut().spawn(SpineSkeleton::new(handle));
 
