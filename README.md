@@ -124,6 +124,10 @@ commands.spawn((SpineSkeleton::new(skeleton), SpineRender3d, Transform::from_xyz
 
 The materials expect **premultiplied-alpha** textures. Most Spine exports include a `*-pma.atlas` / `*-pma.png` pair beside the regular one; point the loader at it, as in the Quick start. Without settings, the loader looks for an atlas named after the skeleton (dropping `-pro`, `-ess`, or `-ios`). For a straight-alpha atlas, premultiply the PNGs in your asset pipeline.
 
+## Known limitations
+
+**Blending happens in linear color space.** Spine's renderers blend in gamma (sRGB) space, and Bevy blends in linear space. Opaque slots match Spine, but additive and semi-transparent slots come out somewhat different: additive highlights look dimmer and overlapping translucent slots less saturated than in the Spine editor. Matching exactly would mean drawing skeletons into a separate gamma-space target and compositing the result.
+
 ## Performance
 
 Skeletons update in parallel, and a rig usually draws in a few draw calls; spineboy is typically one. On an i9-14900K, 50 skeletons cost about 0.25 ms of CPU per frame and 1000 about 2.75 ms. Past roughly 1000 on screen, the GPU side becomes the limit. `cargo run --release --example spine_stress` measures it on your machine.
