@@ -11,9 +11,6 @@ license = "MIT"
 readme = "README.md"
 keywords = ["spine", "bevy", "animation", "2d", "skeletal"]
 categories = ["game-development", "graphics"]
-# Not cleared for crates.io until Esoteric Software signs off, and spine_runtime
-# has to be published first. Flipping this is the only gate; see RELEASING.md.
-publish = false
 # docs/ only holds the README's preview GIF, which crates.io loads from GitHub.
 exclude = [".github/", ".claude/", "docs/", "CLAUDE.md", "PERF_EVAL.md", "RELEASING.md", "release.toml"]
 

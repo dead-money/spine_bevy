@@ -6,6 +6,8 @@ pre-1.0, any `0.x` release may contain breaking changes.
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-10-01
+
 ### Changed
 
 - **Breaking:** targets Bevy 0.19 and Spine 4.3, through `spine_runtime` 0.2.
