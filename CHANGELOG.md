@@ -6,9 +6,20 @@ pre-1.0, any `0.x` release may contain breaking changes.
 
 ## [Unreleased]
 
+## [0.2.1] - 2026-10-01
+
+### Fixed
+
+- Slot tint-black now uses Spine's two-color formula. A dark color used to
+  darken the slot instead of tinting its shadows toward that color.
+- Slot alpha now fades color as well as coverage, so fading slots no longer
+  glow under premultiplied-alpha blending.
+
 ### Changed
 
+- Requires `spine_runtime` 0.2.1.
 - Corrected and tightened the API docs and comments throughout.
+- The README lists linear-space blending as a known limitation.
 
 ## [0.2.0] - 2026-10-01
 

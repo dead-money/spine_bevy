@@ -1,6 +1,6 @@
 [package]
 name = "spine_bevy"
-version = "0.2.0"
+version = "0.2.1"
 edition = "2024"
 rust-version = "1.99"
 authors = ["Brandon Reinhart <brandon@deadmoney.gg>"]
@@ -17,7 +17,7 @@ exclude = [".github/", ".claude/", "docs/", "CLAUDE.md", "PERF_EVAL.md", "RELEAS
 [dependencies]
 bevy = "0.19"
 # The sibling checkout for development; the version for the published crate.
-spine_runtime = { path = "../spine_runtime", version = "0.2" }
+spine_runtime = { path = "../spine_runtime", version = "0.2.1" }
 serde = { version = "1", features = ["derive"] }
 thiserror = "2"
 
