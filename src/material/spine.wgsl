@@ -36,9 +36,10 @@ fn vertex(v: Vertex) -> VertexOutput {
 @fragment
 fn fragment(in: VertexOutput) -> @location(0) vec4<f32> {
     let sample = textureSample(spine_texture, spine_sampler, in.uv);
-    // Tint-black over a PMA sample. `colors.light` is straight alpha, so
-    // `light.a` scales only the output alpha.
-    let rgb = ((sample.rgb - vec3<f32>(1.0)) * colors.dark.rgb + sample.rgb) * colors.light.rgb;
+    // Spine's two-color tint for PMA textures; both colors arrive
+    // premultiplied by the light alpha.
     let a = sample.a * colors.light.a;
+    let rgb = ((sample.a - 1.0) * colors.dark.a + 1.0 - sample.rgb) * colors.dark.rgb
+        + sample.rgb * colors.light.rgb;
     return vec4<f32>(rgb, a);
 }
