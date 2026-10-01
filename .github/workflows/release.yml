@@ -1,9 +1,8 @@
 name: Release
 
 # Publishes to crates.io when cargo-release pushes a vX.Y.Z tag (see
-# RELEASING.md). While Cargo.toml has `publish = false`, `cargo publish` refuses
-# and this run fails. The spine_runtime version this release requires must
-# already be on crates.io.
+# RELEASING.md). The spine_runtime version this release requires must already
+# be on crates.io.
 
 on:
   push:
