@@ -16,7 +16,7 @@ env:
 
 jobs:
   test:
-    name: fmt + clippy + test + doc
+    name: fmt + clippy + test
     runs-on: ubuntu-latest
     steps:
       - name: Checkout spine_bevy
