@@ -180,6 +180,7 @@ pub fn tick_spine_skeletons(
         state
             .animation_state
             .apply(&mut state.skeleton, &mut state.events);
+        state.skeleton.update(dt);
         state.skeleton.update_world_transform(physics);
         let _ = state.renderer.render(&state.skeleton);
     });
