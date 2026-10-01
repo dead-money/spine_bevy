@@ -1,4 +1,4 @@
-//! Bevy asset types + loaders for Spine `.atlas`, `.skel`, and `.json` files.
+//! Asset types and loaders for Spine `.atlas`, `.skel` and `.json` files.
 
 pub mod atlas_loader;
 pub mod skel_json_loader;
@@ -15,10 +15,9 @@ pub use skel_loader::{
 use bevy::asset::{AssetPath, ParseAssetPathError};
 use thiserror::Error;
 
-/// Shared atlas-path derivation used by every skeleton loader. Strips common
-/// rig-suffix variants (`-pro`, `-ess`, `-ios`) off the stem and appends
-/// `.atlas`, or returns the `override` path verbatim. Returns an
-/// [`AtlasDeriveError`] that loader-specific error enums can `From`-convert.
+/// Returns `override_path` if given. Otherwise strips a `-pro`, `-ess` or
+/// `-ios` suffix from the skeleton's file stem and resolves `<stem>.atlas`
+/// beside it: `spineboy-pro.skel` gives `spineboy.atlas`.
 pub(crate) fn derive_atlas_path(
     skel_path: &AssetPath<'static>,
     override_path: Option<&str>,

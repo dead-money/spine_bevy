@@ -1,39 +1,28 @@
-//! Stress test: spawn N skeletons in a grid, run them all at full speed,
-//! report frame budget + per-stage timing in the HUD. Use the arrow keys
-//! to scale N up and down at runtime to find the cliff on your machine.
-//!
-//! ## What it actually measures
-//!
-//! Each frame Bevy runs:
-//!
-//! - `SpineSet::Init` — first-frame asset hookup (cheap once warm)
-//! - `SpineSet::Tick` — animation update + apply + world transforms +
-//!   render-command emission. Linear in N × bones-per-rig.
-//! - `SpineSet::BuildMeshes` — convert command stream to Bevy `Mesh` +
-//!   `MeshMaterial2d` per command. Linear in N × commands-per-rig + per-vertex.
-//! - GPU pipeline (mesh extract, draw calls). Linear in commands.
-//!
-//! The HUD reports the first three plus overall fps/frame so you can see
-//! which side starts hurting first.
+//! Fills a grid with skeletons running at full speed, vsync off, and shows
+//! frame time plus the CPU time of `SpineSet::Tick` and
+//! `SpineSet::BuildMeshes` in the HUD. Run with `--release`.
 //!
 //! ## Controls
 //!
-//! - **`]`** / **`[`**: step the population to the next / previous perfect
-//!   square (1 → 4 → 9 → 16 → …). Grid stays centered on the origin.
-//! - **R**: reset to the initial count
-//! - **Esc**: quit
+//! - `]` / `[`: grow / shrink the grid to the next perfect square
+//!   (1, 4, 9, 16, ...)
+//! - R: reset to the initial count
+//! - Esc: quit
 //!
-//! ## CLI / env
+//! ## Flags
 //!
-//! - `--rig <substring>`: pick the rig by label substring (default `spineboy-pro`).
-//! - `--anim <name>`: animation name to play. Default: spineboy's `run`,
-//!   falling back to the first declared animation if absent.
+//! - `--rig <substring>`: rig label to match (default `spineboy-pro`).
+//! - `--anim <name>`: animation to play (default `run`, falling back to the
+//!   rig's first animation).
 //! - `--count <N>`: initial skeleton count (default 1).
-//! - `--csv <path>`: append `frame,count,fps,tick_ms,build_ms` rows to
-//!   the path each frame for offline analysis.
+//! - `--csv <path>`: write a `frame,count,fps,tick_ms,build_ms` row per
+//!   frame. Values are the smoothed diagnostics.
 //! - `--width <w>` / `--height <h>`: window resolution.
-//! - `--assets <path>` / `SPINE_EXAMPLES_DIR`: same resolution chain as
+//! - `--assets <path>` / `SPINE_EXAMPLES_DIR`: asset root, as in
 //!   `spine_browser`.
+//!
+//! `SPINE_STRESS_SCREENSHOT` and `SPINE_STRESS_SCREENSHOT_FRAMES` capture one
+//! frame and exit.
 
 use std::fs::OpenOptions;
 use std::io::Write;
@@ -56,17 +45,13 @@ use spine_runtime::skeleton::Physics;
 mod common;
 use common::RigEntry;
 
-/// Diagnostic path for the per-frame `SpineSet::Tick` duration.
 const TICK_MS: DiagnosticPath = DiagnosticPath::const_new("spine_bevy/tick_ms");
-/// Diagnostic path for the per-frame `SpineSet::BuildMeshes` duration.
 const BUILD_MS: DiagnosticPath = DiagnosticPath::const_new("spine_bevy/build_meshes_ms");
 
-/// Default initial count. The example always presents a perfect-square
-/// grid centered on the origin, growing in N² steps.
 const DEFAULT_COUNT: usize = 1;
 const GRID_CELL_PADDING: f32 = 1.05;
 
-/// Round `count` down to the nearest perfect square's root.
+/// Side of the square grid nearest to `count`, at least 1.
 fn grid_root_of(count: usize) -> usize {
     (count as f32).sqrt().round().max(1.0) as usize
 }
@@ -110,24 +95,19 @@ struct StressConfig {
     rig: RigEntry,
     anim_override: Option<String>,
     initial_count: usize,
-    /// Per-instance grid spacing in world units. Computed once after the
-    /// first skeleton's bounds settle, then reused.
+    /// Measured once from the first skeleton's bounds.
     cell_size: Option<Vec2>,
-    /// Centroid of the rig's bounding box in attachment-local space.
-    /// Subtracted from each grid cell's center to place the *visible body*
-    /// at the cell center rather than the bone origin (which sits at the
-    /// rig's feet for spineboy-style rigs).
+    /// Bounds center in skeleton space. Subtracted from each cell's center
+    /// so the body, not the root bone, is centered in the cell.
     bbox_centroid: Vec2,
 }
 
 #[derive(Resource, Default)]
 struct StressState {
-    /// Currently spawned skeleton entities.
     spawned: Vec<Entity>,
-    /// Number we're trying to converge to (may differ from `spawned.len()`
-    /// transiently as spawn / despawn batches process across frames).
+    /// `spawned.len()` approaches this over several frames.
     target_count: usize,
-    /// Counter used to seed deterministic per-instance jitter.
+    /// Seeds per-instance time offsets.
     spawn_counter: u64,
 }
 
@@ -146,8 +126,7 @@ struct CsvWriter {
 #[derive(Component)]
 struct HudText;
 
-/// Marker so we can identify skeletons that still need their per-instance
-/// time-offset randomization applied (once `SpineSkeletonState` exists).
+/// Seconds to advance the animation once the skeleton has loaded.
 #[derive(Component)]
 struct NeedsTimeOffset(f32);
 
@@ -182,8 +161,7 @@ fn main() -> ExitCode {
 
     let initial_count = cli.count.unwrap_or(DEFAULT_COUNT).max(1);
 
-    // Vsync would mask the real cost — this is a stress test, not a
-    // production loop. Lower-bound FPS is more useful than smooth.
+    // Vsync would cap the frame rate and hide the real cost.
     let resolution = match (cli.width, cli.height) {
         (Some(w), Some(h)) => WindowResolution::new(w, h),
         _ => WindowResolution::default(),
@@ -224,8 +202,6 @@ fn main() -> ExitCode {
     .add_plugins(FrameTimeDiagnosticsPlugin::default())
     .insert_resource(StressConfig {
         rig,
-        // Default to spineboy's `run` so the demo looks like the
-        // stampede the stress test wants. CLI --anim wins.
         anim_override: cli.anim.or_else(|| Some("run".to_string())),
         initial_count,
         cell_size: None,
@@ -243,7 +219,6 @@ fn main() -> ExitCode {
         app.add_systems(Update, write_csv_row);
     }
 
-    // Optional one-shot screenshot for docs / smoke verification.
     if let Some(cfg) = common::ScreenshotConfig::from_env(
         "SPINE_STRESS_SCREENSHOT",
         "SPINE_STRESS_SCREENSHOT_FRAMES",
@@ -304,8 +279,6 @@ fn setup(mut commands: Commands) {
     ));
 }
 
-// ---- Population control --------------------------------------------------
-
 fn handle_input(
     keys: Res<ButtonInput<KeyCode>>,
     cfg: Res<StressConfig>,
@@ -330,9 +303,7 @@ fn handle_input(
     }
 }
 
-/// Spawn the first skeleton at the origin so we can measure its bounds and
-/// derive a sensible per-cell grid size before laying out the rest. The
-/// rest of the population converges once we have a measurement.
+/// Sizes grid cells from the first skeleton's bounds, once it has geometry.
 fn measure_cell_size(
     mut cfg: ResMut<StressConfig>,
     sk_query: Query<&SpineSkeleton>,
@@ -381,17 +352,14 @@ fn converge_population(
     mut camera_transforms: Query<&mut Transform, With<Camera2d>>,
     mut transforms: Query<&mut Transform, (With<SpineSkeleton>, Without<Camera2d>)>,
 ) {
-    // Always have at least one skeleton spawned so cell-size measurement
-    // can converge.
+    // `measure_cell_size` needs one skeleton to measure.
     if state.spawned.is_empty() {
         spawn_one(&mut commands, &cfg, &mut state, &asset_server, Vec2::ZERO);
     }
     let cell = cfg.cell_size.unwrap_or(Vec2::splat(300.0));
     let centroid = cfg.bbox_centroid;
 
-    // Reposition every existing entity into the slot it would occupy at
-    // the current target_count. Cheap (one Transform write per skeleton)
-    // and means resizes flow into the new grid immediately.
+    // Re-place everything each frame so a resize takes effect immediately.
     for (idx, &entity) in state.spawned.iter().enumerate() {
         let pos = grid_position(idx, state.target_count, cell) - centroid;
         if let Ok(mut t) = transforms.get_mut(entity) {
@@ -400,8 +368,7 @@ fn converge_population(
         }
     }
 
-    // Adjust population toward target. Spawn / despawn in batches of up
-    // to 64 per frame to avoid huge frame-time spikes.
+    // Batched so a large resize doesn't spike one frame.
     const BATCH: usize = 64;
     let current = state.spawned.len();
     if current < state.target_count {
@@ -419,9 +386,7 @@ fn converge_population(
         }
     }
 
-    // The grid is centered on the origin, so the camera stays put.
-    // Just refit the orthographic projection so the full grid is visible
-    // with a margin once the population settles.
+    // Refit the camera once the population settles.
     if state.spawned.len() == state.target_count && state.target_count > 0 {
         let root = grid_root_of(state.target_count);
         let view_height = cell.y * root as f32 * 1.1;
@@ -459,8 +424,7 @@ fn spawn_one(
     if let Some(name) = &cfg.anim_override {
         sk = sk.with_initial_animation(0, name.clone(), true);
     }
-    // Deterministic per-instance time offset so all skeletons aren't in
-    // lockstep — defeats GPU coherence and inflates fps artificially.
+    // Desynchronize instances so they don't all show the same pose.
     let offset = jitter(state.spawn_counter) * 5.0;
     state.spawn_counter += 1;
     let entity = commands
@@ -473,16 +437,13 @@ fn spawn_one(
     state.spawned.push(entity);
 }
 
-/// Once a freshly-spawned skeleton has its `SpineSkeletonState`, advance
-/// its internal animation clock by the marker's offset and remove the
-/// marker. Without this, every spineboy walks in perfect sync.
+/// Once a skeleton has loaded, advances its animation by its
+/// [`NeedsTimeOffset`] and removes the marker.
 fn seed_time_offsets(
     mut commands: Commands,
     mut q: Query<(Entity, &mut SpineSkeleton, &NeedsTimeOffset)>,
 ) {
     for (entity, mut sk, NeedsTimeOffset(offset)) in &mut q {
-        // Need state to exist *and* an animation to have been applied
-        // (otherwise the offset has nothing to act on).
         let ready = sk
             .state
             .as_ref()
@@ -490,9 +451,7 @@ fn seed_time_offsets(
         if !ready {
             continue;
         }
-        // The pending animation may have failed (e.g. the rig doesn't
-        // have the requested name); fall back to the first declared
-        // animation so something is always playing.
+        // Track 0 is empty when the rig lacks the requested animation.
         if let Some(state) = sk.state.as_mut()
             && state.animation_state.track(0).is_none()
             && let Some(anim) = state.animation_state.data().data().animations.first()
@@ -507,10 +466,8 @@ fn seed_time_offsets(
     }
 }
 
-/// Place `index` (0..total) in a square grid centered on the origin.
-/// `total` is rounded up to the next perfect square so each row has the
-/// same column count and the grid stays symmetric. Excess slots in the
-/// final row are simply unused.
+/// Position of `index` in a `grid_root_of(total)`-wide grid centered on the
+/// origin, filled row by row from the top.
 fn grid_position(index: usize, total: usize, cell: Vec2) -> Vec2 {
     let cols = grid_root_of(total);
     let row = index / cols;
@@ -520,15 +477,12 @@ fn grid_position(index: usize, total: usize, cell: Vec2) -> Vec2 {
     Vec2::new(x, y)
 }
 
-// ---- Stage timing --------------------------------------------------------
-
 fn mark_tick_start(mut t: ResMut<StageTimers>) {
     t.tick_start = Some(Instant::now());
 }
 
-/// One system between Tick and BuildMeshes: closes out tick timing,
-/// opens build timing. Combined to avoid two unordered ResMut systems
-/// touching `StageTimers` in the same gap.
+/// Ends tick timing and starts build timing. Two separate systems in the
+/// same gap would be unordered relative to each other.
 fn mark_tick_end_and_build_start(mut t: ResMut<StageTimers>, mut diagnostics: Diagnostics) {
     let now = Instant::now();
     if let Some(start) = t.tick_start.take() {
@@ -544,8 +498,6 @@ fn mark_build_end(mut t: ResMut<StageTimers>, mut diagnostics: Diagnostics) {
         diagnostics.add_measurement(&BUILD_MS, || ms);
     }
 }
-
-// ---- HUD + CSV -----------------------------------------------------------
 
 fn update_hud(
     state: Res<StressState>,
@@ -610,11 +562,7 @@ fn write_csv_row(
     );
 }
 
-// ---- Misc ----------------------------------------------------------------
-
-/// Cheap deterministic 0..1 jitter from a counter. Not statistically
-/// pretty; enough to scramble per-instance time offsets so the population
-/// isn't in lockstep.
+/// Deterministic value in `0.0..=1.0` from a counter.
 fn jitter(seed: u64) -> f32 {
     let mut x = seed
         .wrapping_mul(0x9E37_79B9_7F4A_7C15)

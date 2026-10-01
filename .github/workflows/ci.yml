@@ -9,9 +9,7 @@ on:
 env:
   CARGO_TERM_COLOR: always
   RUST_BACKTRACE: 1
-  # Opt in to Node 24 for any JS-based actions. Node 20 is deprecated
-  # and will be forced off by GitHub in June 2026; this flips the
-  # switch early so we're running on the same Node they'll default to.
+  # Run JS-based actions on Node 24 instead of the deprecated Node 20.
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
 
 jobs:
@@ -24,13 +22,9 @@ jobs:
         with:
           path: spine_bevy
 
-      # Path-dep on spine_runtime as a sibling clone; matches the
-      # workspace layout documented in spine_bevy/Cargo.toml.
-      #
-      # On pull requests we try the matching-branch-name heuristic first
-      # so a coordinated pair of PRs (same branch name on both repos)
-      # can go green together. Falls back to the runtime's default branch
-      # (main) when no matching branch exists upstream.
+      # spine_runtime is a path dependency on a sibling checkout. A PR uses
+      # the spine_runtime branch with the same name when one exists, so
+      # paired PRs across both repos test together; otherwise main.
       - name: Resolve spine_runtime ref
         id: runtime_ref
         run: |
@@ -56,10 +50,8 @@ jobs:
           path: spine_runtime
           ref: ${{ steps.runtime_ref.outputs.ref }}
 
-      # spine-runtimes is needed by examples + by the runtime crate's
-      # render_smoke test (which runs as part of `cargo test` on the
-      # path-dep above). Examples themselves are not exercised by
-      # `cargo test` but the dep tree must compile.
+      # The examples' rigs. `cargo test` only builds the examples, so
+      # nothing in this workflow reads them yet.
       - name: Checkout spine-runtimes (upstream)
         uses: actions/checkout@v6
         with:
@@ -68,9 +60,7 @@ jobs:
           # Match spine_runtime's pin (upstream/4.3); bump together.
           ref: ba17cf88b198c6531c6c51d8d4e1e4b3c3ab47dd
 
-      # Bevy's wgpu / winit / alsa deps need a handful of system
-      # libraries even when we never actually open a window during
-      # `cargo test`.
+      # Needed to build Bevy's wgpu / winit / alsa deps, even headless.
       - name: Install Linux system deps
         run: |
           sudo apt-get update

@@ -10,23 +10,18 @@ use spine_runtime::load::{AtlasAttachmentLoader, JsonError, SkeletonJson};
 use crate::asset::atlas_loader::SpineAtlasAsset;
 use crate::asset::skel_loader::SpineSkeletonAsset;
 
-/// Per-load overrides for the JSON skeleton loader. When `atlas_path` is
-/// `None` (the default), the loader derives the atlas path from the
-/// skeleton's filename stem — the same convention used by the binary
-/// `.skel` loader (`spineboy-pro.json` -> `spineboy.atlas`).
+/// Per-load settings for [`SpineSkeletonJsonLoader`]. Same fields and atlas
+/// derivation as [`SpineSkeletonLoaderSettings`](crate::SpineSkeletonLoaderSettings).
 #[derive(Clone, Default, Debug, Serialize, Deserialize)]
 pub struct SpineSkeletonJsonLoaderSettings {
-    /// Absolute asset path of the atlas, or `None` to auto-derive.
+    /// Atlas asset path from the asset root, or `None` to derive it from the
+    /// skeleton path (`spineboy-pro.json` gives `spineboy.atlas`).
     pub atlas_path: Option<String>,
-    /// Uniform scale applied to vertex coordinates at load time. `None` keeps
-    /// the skeleton's native scale. Forwarded to `SkeletonJson::with_scale`.
+    /// Load-time scale for positions and sizes. `None` means 1.0.
     pub scale: Option<f32>,
 }
 
-/// Bevy asset loader for `.json` skeleton files. Loads the companion atlas
-/// the same way the `.skel` loader does and yields a [`SpineSkeletonAsset`]
-/// — the asset type is shared so both formats plug into the rest of the
-/// pipeline identically.
+/// Loads `.json` skeletons and their atlas into a [`SpineSkeletonAsset`].
 #[derive(Default, TypePath)]
 pub struct SpineSkeletonJsonLoader;
 

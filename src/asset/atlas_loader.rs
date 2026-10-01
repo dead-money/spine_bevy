@@ -7,22 +7,16 @@ use thiserror::Error;
 
 use spine_runtime::atlas::{Atlas, AtlasError};
 
-/// Parsed Spine `.atlas` file plus a page-index-parallel `Vec<Handle<Image>>`
-/// that the Bevy-side renderer uses to resolve `TextureId(page_index)` into a
-/// concrete `Handle<Image>`.
+/// A parsed `.atlas` file and an image handle per page.
 #[derive(Asset, TypePath, Debug)]
 pub struct SpineAtlasAsset {
-    /// Arc-shared parsed atlas. Multiple skeleton assets can reference the
-    /// same atlas cheaply.
     pub atlas: Arc<Atlas>,
-    /// `pages[i]` is the GPU image for `atlas.pages[i]`. Indexed by
-    /// `RenderCommand::texture.0 as usize` at draw time.
+    /// `pages[i]` is the image for `atlas.pages[i]`; a render command's
+    /// `TextureId` is an index into it.
     pub pages: Vec<Handle<Image>>,
 }
 
-/// Bevy asset loader for `.atlas` files. Parses the atlas text and
-/// triggers a dependent `Image` load for every page so all PNGs land in
-/// the asset server alongside the atlas itself.
+/// Loads `.atlas` files and each page image, resolved relative to the atlas.
 #[derive(Default, TypePath)]
 pub struct SpineAtlasLoader;
 
@@ -52,9 +46,6 @@ impl AssetLoader for SpineAtlasLoader {
         let text = std::str::from_utf8(&bytes)?;
         let atlas = Atlas::parse(text)?;
 
-        // Resolve each page's PNG as a sibling of the .atlas file and register
-        // it as a dependency. `resolve_embed` is RFC-1808 relative resolution
-        // (strips the atlas filename, concatenates the PNG name).
         let mut pages = Vec::with_capacity(atlas.pages.len());
         let base_path = load_context.path().clone();
         for page in &atlas.pages {

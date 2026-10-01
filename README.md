@@ -132,7 +132,7 @@ Skeletons update in parallel, and a rig usually draws in a few draw calls; spine
 
 | Bevy | Spine | spine_bevy |
 |------|-------|------------|
-| 0.19 | 4.3   | `main`     |
+| 0.19 | 4.3   | 0.2        |
 | 0.18 | 4.3   | `f2a00bb`  |
 | 0.18 | 4.2   | `8c7be8a`  |
 
@@ -151,7 +151,7 @@ cargo run --example spine_browser
 - `spine_browser` is a gallery of every example rig. **Space** / **Shift+Space** switch rigs, **N** switches animations, **S** switches skins, **R** restarts, **+** / **-** change speed, **Esc** quits. `--assets <path>` or `SPINE_EXAMPLES_DIR` points it at the rigs.
 - `spineboy_walk` is the Quick start.
 - `spineboy_walk_3d` draws spineboy in a 3D scene with a ground plane, a light, and an orbiting camera.
-- `spineboy_screenshot` renders a few frames to a PNG and exits (`SPINE_SCREENSHOT`, `SPINE_SCREENSHOT_FRAMES`).
+- `spineboy_screenshot` saves frame 60 to a PNG and exits (`SPINE_SCREENSHOT`, `SPINE_SCREENSHOT_FRAMES`).
 - `spine_stress` fills the screen with spineboys. **]** / **[** change the count, and `--csv path.csv` logs timings per frame. Run it with `--release`.
 
 To record a GIF like the one above, `spine_browser` can save a frame sequence:

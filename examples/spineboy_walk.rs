@@ -1,8 +1,5 @@
-//! First visual example: loads spineboy-pro, plays the `walk` animation on
-//! track 0. Points the asset root at the upstream `spine-runtimes/examples`
-//! directory so we don't duplicate rig binaries into this crate.
-//!
-//! Run from `spine_bevy/`:
+//! Plays spineboy's `walk` animation, loading the rig from a sibling
+//! `spine-runtimes/examples` checkout. The README's Quick start, runnable.
 //!
 //! ```bash
 //! cargo run --example spineboy_walk
@@ -36,14 +33,11 @@ fn main() {
 fn setup(mut commands: Commands, asset_server: Res<AssetServer>) {
     commands.spawn((
         Camera2d,
-        // Spineboy is tall and positioned with origin at foot. Shift the
-        // camera up so the full rig sits in frame.
+        // Spineboy's origin is at its feet.
         Transform::from_xyz(0.0, 200.0, 0.0),
     ));
 
-    // Override the atlas path to the PMA variant — the shader assumes
-    // premultiplied-alpha textures, which the stock `spineboy.atlas` is
-    // not. `-pma.png` ships pre-multiplied.
+    // The materials expect premultiplied alpha; the stock `spineboy.atlas` is straight.
     let skel_handle: Handle<SpineSkeletonAsset> = asset_server
         .load_builder()
         .with_settings(|settings: &mut SpineSkeletonLoaderSettings| {

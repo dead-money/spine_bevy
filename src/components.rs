@@ -7,112 +7,78 @@ use spine_runtime::skeleton::{Physics, Skeleton, SkinNotFound};
 use crate::asset::SpineSkeletonAsset;
 use crate::material::{SpineMaterial, SpineMaterial3d};
 
-/// Render-mode marker: skeleton renders through the `Material2d` / sprite
-/// pipeline on the entity's `Camera2d`. Inserted automatically by
-/// [`crate::systems::ensure_spine_render_marker`] on any [`SpineSkeleton`]
-/// that doesn't already carry a marker, so existing 2D code keeps working
-/// without changes.
+/// Render-mode marker: draw through the 2D `Material2d` pipeline. The
+/// default; [`crate::systems::ensure_spine_render_marker`] inserts it on any
+/// [`SpineSkeleton`] without a marker.
 #[derive(Component, Debug, Clone, Copy, Default)]
 pub struct SpineRender2d;
 
-/// Render-mode marker: skeleton renders through the 3D `Material` pipeline
-/// on the entity's `Camera3d`. Insert alongside [`SpineSkeleton`] to opt
-/// into the 3D backend. Mutually exclusive with [`SpineRender2d`].
+/// Render-mode marker: draw through the 3D `Material` pipeline. Insert at
+/// spawn alongside [`SpineSkeleton`]; don't combine with [`SpineRender2d`].
 ///
-/// Positions come out of the runtime in the skeleton's local XY plane
-/// (z = 0); rotate / position the entity's parent `Transform` to place
-/// the rig in 3D space. Per-slot draw order is preserved via a small
-/// local-Z offset, with depth writes disabled so camera-distance sorting
-/// in the transparent pass does the heavy lifting.
+/// The rig lies in the entity's local XY plane; orient it with the entity's
+/// `Transform`. Draw order comes from a small local-Z step per render
+/// command, with depth writes off.
 #[derive(Component, Debug, Clone, Copy, Default)]
 pub struct SpineRender3d;
 
-/// Per-instance Spine skeleton. Owns a [`Handle<SpineSkeletonAsset>`] plus
-/// lazily-constructed runtime state ([`Skeleton`] + [`AnimationState`] +
+/// One Spine skeleton instance. Holds the asset handle and, once the asset
+/// has loaded, its runtime state ([`Skeleton`], [`AnimationState`],
 /// [`SkeletonRenderer`]).
-///
-/// Spawn with [`SpineSkeleton::new`] and — optionally — chain
-/// [`SpineSkeleton::with_initial_animation`] to start a track-0 animation
-/// the frame the asset finishes loading.
 #[derive(Component)]
 #[require(Transform, Visibility)]
 pub struct SpineSkeleton {
-    /// Asset handle. Kept strong — the asset (and its `Arc<SkeletonData>`)
-    /// stays alive as long as this component exists.
+    /// Strong handle; keeps the asset loaded while the component exists.
     pub asset: Handle<SpineSkeletonAsset>,
-    /// Runtime state. `None` until [`crate::systems::initialize_spine_skeletons`]
-    /// observes the asset finishing load and constructs it.
+    /// `None` until [`crate::systems::initialize_spine_skeletons`] runs after
+    /// the asset loads.
     pub state: Option<SpineSkeletonState>,
-    /// Playback speed multiplier. Applied to `Time::delta_secs` each tick.
+    /// Multiplies `Time::delta_secs` for animation and physics.
     pub time_scale: f32,
-    /// Physics-integration mode forwarded to
-    /// [`Skeleton::update_world_transform`]. Defaults to
-    /// [`Physics::Update`].
+    /// Passed to [`Skeleton::update_world_transform`] each tick.
     pub physics: Physics,
-    /// When `true`, the tick system skips `update` / `apply` /
-    /// `update_world_transform` / `render`.
+    /// When `true`, the skeleton neither advances nor re-renders.
     pub paused: bool,
-    /// Animation to start on track 0 once the asset finishes loading.
-    /// Overwritten on every successful init. Use [`SpineSkeleton::play`] for
-    /// post-init playback.
+    /// Animation to start once the asset loads. Taken at init; after that,
+    /// use [`SpineSkeleton::play`].
     pub pending_animation: Option<PendingAnimation>,
-    /// Skin to activate once the asset finishes loading. Applied after the
-    /// pending animation, before the first tick. Use [`SpineSkeleton::set_skin`]
-    /// for post-init skin changes.
+    /// Skin to activate once the asset loads, before the first tick. Taken
+    /// at init; after that, use [`SpineSkeleton::set_skin`].
     pub pending_skin: Option<String>,
 }
 
-/// Runtime state owned by a [`SpineSkeleton`] once its asset has loaded.
-/// Constructed by [`crate::systems::initialize_spine_skeletons`]; everything
-/// here is per-instance (no shared mutable state across skeletons).
+/// Per-instance runtime state of a loaded [`SpineSkeleton`].
 pub struct SpineSkeletonState {
-    /// Pose state — bone transforms, slot attachments, draw order.
     pub skeleton: Skeleton,
-    /// Multi-track animation playback. Mutate directly via
-    /// [`SpineSkeleton::animation_state_mut`] for queueing / mixing
-    /// beyond what [`SpineSkeleton::play`] covers.
+    /// Use directly for queueing and mixing beyond [`SpineSkeleton::play`].
     pub animation_state: AnimationState,
-    /// Owns scratch buffers + the most recent `RenderCommand` stream.
-    /// Read via `renderer.commands()` in `SpineSet::BuildMeshes`.
+    /// Holds the commands from the last tick; read with `renderer.commands()`.
     pub renderer: SkeletonRenderer,
-    /// Reusable per-frame event buffer. Cleared and refilled each tick;
-    /// drained into Bevy messages by [`crate::systems::drain_spine_events`].
+    /// Keyframe events from the last tick. Drained by
+    /// [`crate::systems::drain_spine_events`].
     pub events: Vec<Event>,
-    /// Mesh asset per `RenderCommand` slot. Sized up lazily as the
-    /// frame-to-frame command count grows; the vec is index-parallel
-    /// with `materials` and `children`. Populated by
-    /// [`crate::mesh::build_spine_meshes`].
+    /// One mesh per render-command index, grown to the largest command
+    /// count seen. Index-parallel with `children` and the material vec in use.
     pub meshes: Vec<Handle<Mesh>>,
-    /// 2D material asset per `RenderCommand` slot for skeletons tagged
-    /// with [`SpineRender2d`]. Index-parallel with `meshes`. Empty on
-    /// 3D-tagged skeletons.
+    /// Materials for [`SpineRender2d`] skeletons; empty otherwise.
     pub materials: Vec<Handle<SpineMaterial>>,
-    /// 3D material asset per `RenderCommand` slot for skeletons tagged
-    /// with [`SpineRender3d`]. Index-parallel with `meshes`. Empty on
-    /// 2D-tagged skeletons.
+    /// Materials for [`SpineRender3d`] skeletons; empty otherwise.
     pub materials_3d: Vec<Handle<SpineMaterial3d>>,
-    /// Child entity per `RenderCommand` slot. Index-parallel with
-    /// `meshes`. Excess entities (after the command count shrinks) are
-    /// hidden rather than despawned so re-growth reuses them.
+    /// Child mesh entities. Ones past the current command count are hidden,
+    /// not despawned, so they can be reused.
     pub children: Vec<Entity>,
 }
 
-/// Deferred animation request stored on [`SpineSkeleton::pending_animation`]
-/// when [`SpineSkeleton::play`] is called before the asset has loaded.
+/// Animation request held until the skeleton's asset loads.
 #[derive(Clone, Debug)]
 pub struct PendingAnimation {
-    /// Track index inside `AnimationState` (track 0 is the primary).
     pub track: usize,
-    /// Animation name as declared in `SkeletonData::animations`.
     pub name: String,
-    /// `true` to loop, `false` to play once.
     pub looping: bool,
 }
 
 impl SpineSkeleton {
-    /// Construct a new skeleton component pointing at `asset`. Defaults:
-    /// `time_scale = 1.0`, `physics = Physics::Update`, unpaused, no pending
-    /// animation.
+    /// `time_scale` 1.0, [`Physics::Update`], unpaused, nothing pending.
     #[must_use]
     pub fn new(asset: Handle<SpineSkeletonAsset>) -> Self {
         Self {
@@ -126,8 +92,7 @@ impl SpineSkeleton {
         }
     }
 
-    /// Builder-style setter: queue `name` (looped or not) to start on track
-    /// `track` the first frame the asset is available.
+    /// Starts `name` on `track` once the asset loads.
     #[must_use]
     pub fn with_initial_animation(
         mut self,
@@ -143,10 +108,8 @@ impl SpineSkeleton {
         self
     }
 
-    /// Play `name` on `track`. If the asset has loaded, dispatches immediately
-    /// via [`AnimationState::set_animation_by_name`] — failures are logged
-    /// and swallowed. Otherwise queues the request, overwriting any prior
-    /// pending animation.
+    /// Sets `name` on `track` now if the asset has loaded, logging a warning
+    /// if it fails. Otherwise replaces the pending animation.
     pub fn play(&mut self, track: usize, name: impl Into<String>, looping: bool) {
         let pending = PendingAnimation {
             track,
@@ -169,50 +132,41 @@ impl SpineSkeleton {
         }
     }
 
-    /// Borrow the inner [`AnimationState`] once init has run. Returns `None`
-    /// while the asset is still loading.
+    /// `None` until the asset has loaded.
     #[must_use]
     pub fn animation_state(&self) -> Option<&AnimationState> {
         self.state.as_ref().map(|s| &s.animation_state)
     }
 
-    /// Mutable variant of [`Self::animation_state`] for callers that need
-    /// direct control (queuing, track clearing, mix tweaks).
+    /// `None` until the asset has loaded.
     pub fn animation_state_mut(&mut self) -> Option<&mut AnimationState> {
         self.state.as_mut().map(|s| &mut s.animation_state)
     }
 
-    /// Borrow the inner [`Skeleton`] once init has run.
+    /// `None` until the asset has loaded.
     #[must_use]
     pub fn skeleton(&self) -> Option<&Skeleton> {
         self.state.as_ref().map(|s| &s.skeleton)
     }
 
-    /// Mutable variant of [`Self::skeleton`] for hand-authored pose tweaks
-    /// between ticks (constraint overrides, bone-follow gameplay code, etc.).
+    /// `None` until the asset has loaded.
     pub fn skeleton_mut(&mut self) -> Option<&mut Skeleton> {
         self.state.as_mut().map(|s| &mut s.skeleton)
     }
 
-    /// Builder-style setter: queue `name` to be activated as the skeleton's
-    /// skin once the asset finishes loading. Use [`SpineSkeleton::set_skin`]
-    /// for post-init changes.
+    /// Activates skin `name` once the asset loads.
     #[must_use]
     pub fn with_initial_skin(mut self, name: impl Into<String>) -> Self {
         self.pending_skin = Some(name.into());
         self
     }
 
-    /// Activate skin `name`. If the asset has loaded, dispatches immediately
-    /// via [`Skeleton::set_skin_by_name`] and re-resolves slot attachments
-    /// against the new skin. Otherwise queues the request, overwriting any
-    /// prior pending skin.
+    /// Activates skin `name` and resets slots to the setup pose if the asset
+    /// has loaded. Otherwise replaces the pending skin.
     ///
     /// # Errors
-    /// Returns [`SkinNotFound`] if the skin name is unknown to the loaded
-    /// asset. When queuing (asset not yet loaded), returns `Ok(())` — the
-    /// request might still fail at init time, in which case it's logged and
-    /// swallowed.
+    /// [`SkinNotFound`] if the loaded data has no such skin. A queued skin
+    /// returns `Ok(())`; an unknown name is logged at init.
     pub fn set_skin(&mut self, name: impl Into<String>) -> Result<(), SkinNotFound> {
         let name = name.into();
         if let Some(state) = self.state.as_mut() {
@@ -225,8 +179,7 @@ impl SpineSkeleton {
         }
     }
 
-    /// Names of every animation declared by the loaded `SkeletonData`.
-    /// Returns `None` while the asset is still loading.
+    /// Animation names in data order. `None` until the asset has loaded.
     #[must_use]
     pub fn available_animations(&self) -> Option<Vec<&str>> {
         let skel = self.skeleton()?;
@@ -239,9 +192,8 @@ impl SpineSkeleton {
         )
     }
 
-    /// Names of every skin declared by the loaded `SkeletonData`. The
-    /// implicit `default` skin is always present at index 0.
-    /// Returns `None` while the asset is still loading.
+    /// Skin names in data order, including `default` when the data has one.
+    /// `None` until the asset has loaded.
     #[must_use]
     pub fn available_skins(&self) -> Option<Vec<&str>> {
         let skel = self.skeleton()?;

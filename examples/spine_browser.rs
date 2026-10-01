@@ -1,30 +1,31 @@
-//! Interactive browser for the example rigs that ship in upstream
-//! `spine-runtimes/examples/`. Cycle through rigs / animations / skins with
-//! the keyboard; the camera live-fits to the visible AABB of the current
-//! pose.
+//! Gallery of the rigs in upstream `spine-runtimes/examples/`. Cycle rigs,
+//! animations, and skins from the keyboard; the camera follows the bounds of
+//! the current pose.
 //!
 //! ## Controls
 //!
-//! - **Space** / **Shift+Space** — next / previous rig
-//! - **N** / **Shift+N** — next / previous animation in the current rig
-//! - **S** / **Shift+S** — next / previous skin in the current rig
-//! - **R** — reset the current animation to time zero
-//! - **+** / **-** — speed up / slow down playback (clamped 0.1× – 4×)
-//! - **Esc** — quit
+//! - Space / Shift+Space: next / previous rig
+//! - N / Shift+N: next / previous animation
+//! - S / Shift+S: next / previous skin
+//! - R: restart the current animation
+//! - + / -: speed up / slow down playback (0.1x to 4x)
+//! - Esc: quit
 //!
 //! ## Asset root
 //!
-//! The example does not bundle the Spine sample art — that lives in the
-//! upstream [`EsotericSoftware/spine-runtimes`] repo and is licensed
-//! separately. The browser looks for the `examples/` directory in this
-//! order:
+//! The sample art lives in [`EsotericSoftware/spine-runtimes`] and is
+//! licensed separately. The browser looks for its `examples/` directory in
+//! this order:
 //!
-//! 1. `--assets <path>` on the command line
-//! 2. `SPINE_EXAMPLES_DIR` environment variable
-//! 3. `../spine-runtimes/examples` (sibling clone, what other examples assume)
-//! 4. `./spine-runtimes/examples` (cwd)
+//! 1. `--assets <path>`
+//! 2. `SPINE_EXAMPLES_DIR`
+//! 3. `../spine-runtimes/examples`
+//! 4. `./spine-runtimes/examples`
 //!
-//! If none exist, the example prints a clone command and exits cleanly.
+//! If none exists, it prints a clone command and exits with an error.
+//!
+//! Other flags: `--rig <substring>`, `--anim <name>`, `--skin <name>`, and
+//! `--width <px> --height <px>` for a fixed window size.
 //!
 //! [`EsotericSoftware/spine-runtimes`]: https://github.com/EsotericSoftware/spine-runtimes
 
@@ -47,39 +48,31 @@ use common::RigEntry;
 struct Browser {
     rigs: Vec<RigEntry>,
     current_rig: usize,
-    /// Animation names for the currently-loaded rig. Refreshed once the
-    /// asset finishes loading.
+    /// Empty until the current rig's asset loads.
     animations: Vec<String>,
     current_animation: usize,
-    /// Skin names for the currently-loaded rig. Always has at least one
-    /// entry (`"default"`) once populated.
+    /// Empty until the current rig's asset loads.
     skins: Vec<String>,
     current_skin: usize,
     time_scale: f32,
-    /// Entity holding the active `SpineSkeleton`. Despawned and respawned
-    /// when the user cycles rigs.
+    /// Respawned on every rig change.
     skeleton_entity: Option<Entity>,
-    /// Current camera params (smoothed every frame toward `target_view`).
+    /// Eased toward `target_view` each frame.
     current_view: View,
-    /// Most recent aggregate AABB of the visible pose, expanded by a
-    /// margin. Updated each frame.
+    /// Bounds of the current pose plus a margin.
     target_view: View,
-    /// Set when the active rig changes; used by the metadata-refresh
-    /// system to re-pull animations / skins after the new asset loads.
+    /// Set on rig change; `refresh_metadata` clears it once the asset loads.
     metadata_dirty: bool,
-    /// CLI-supplied animation name to start playing on first metadata
-    /// refresh (overrides the default of `animations[0]`). Cleared once
-    /// applied so subsequent rig changes use the default.
+    /// `--anim` and `--skin`, consumed by the first metadata refresh so
+    /// later rigs start on their first animation and skin.
     initial_anim: Option<String>,
-    /// CLI-supplied skin name to apply on first metadata refresh.
     initial_skin: Option<String>,
 }
 
 #[derive(Clone, Copy, Debug)]
 struct View {
     center: Vec2,
-    /// Vertical world-units visible at the desired margin. Camera projection
-    /// scales to fit this; horizontal extent follows aspect ratio.
+    /// Visible world units, vertically. Width follows the window aspect.
     height: f32,
 }
 
@@ -96,25 +89,20 @@ impl Default for View {
 struct HudText;
 
 const VIEW_MARGIN: f32 = 1.15;
-/// Per-frame lerp factor for camera smoothing. 0.15 = ~10 frame settle.
+/// Camera easing per 60 Hz frame; settles in about 10 frames.
 const VIEW_LERP: f32 = 0.15;
 const MIN_VIEW_HEIGHT: f32 = 100.0;
 
-/// Parsed command-line arguments. Long forms only — `--key value` or `--key=value`.
+/// `--key value` or `--key=value`; unknown keys are ignored.
 #[derive(Default, Debug, Clone)]
 struct Cli {
-    /// Asset root containing `<rig>/export/...`.
     assets: Option<PathBuf>,
-    /// Substring filter to pre-select a rig at startup. Matches the
-    /// label, e.g. `--rig spineboy-pro` or `--rig celestial`.
+    /// Substring of the starting rig's label, e.g. `celestial`.
     rig: Option<String>,
-    /// Animation name to start playing once the rig loads. Falls back
-    /// to the first animation if absent or unknown.
+    /// Unknown names fall back to the first animation.
     anim: Option<String>,
-    /// Initial skin name (overrides `default`).
     skin: Option<String>,
-    /// Window dimensions in physical pixels. Useful when recording so
-    /// the captured frames have a known size.
+    /// Physical pixels. Both must be set to take effect.
     window_width: Option<u32>,
     window_height: Option<u32>,
 }
@@ -167,7 +155,6 @@ fn main() -> ExitCode {
         asset_root.display()
     );
 
-    // Apply --rig substring jump.
     let initial_rig = cli
         .rig
         .as_ref()
@@ -183,7 +170,6 @@ fn main() -> ExitCode {
         );
     }
 
-    // Build the window plugin with optional fixed resolution.
     let mut window_plugin = WindowPlugin::default();
     if let (Some(w), Some(h)) = (cli.window_width, cli.window_height) {
         window_plugin.primary_window = Some(Window {
@@ -231,7 +217,6 @@ fn main() -> ExitCode {
         ),
     );
 
-    // Optional single-shot screenshot.
     if let Some(cfg) = common::ScreenshotConfig::from_env(
         "SPINE_BROWSER_SCREENSHOT",
         "SPINE_BROWSER_SCREENSHOT_FRAMES",
@@ -240,7 +225,7 @@ fn main() -> ExitCode {
         common::install_screenshot_driver(&mut app, cfg);
     }
 
-    // Optional frame-sequence recording for assembling animated GIFs.
+    // Frame sequence for assembling GIFs.
     if let Ok(dir) = std::env::var("SPINE_BROWSER_RECORD_DIR") {
         let dir = PathBuf::from(dir);
         let frames: u32 = std::env::var("SPINE_BROWSER_RECORD_FRAMES")
@@ -268,10 +253,9 @@ fn main() -> ExitCode {
     ExitCode::SUCCESS
 }
 
-/// Frame-sequence record driver: writes `frame_NNNN.png` into `out_dir`
-/// for `target_frames` frames after a `warmup_frames` settle period (lets
-/// the camera live-fit converge before recording starts). Exits after a
-/// grace period so async PNG writes flush.
+/// Writes `frame_NNNN.png` into `out_dir` for `target_frames` frames, after
+/// `warmup_frames` frames for the camera to settle, then exits 60 frames
+/// later so the async PNG writes finish.
 #[derive(Resource)]
 struct RecordConfig {
     out_dir: PathBuf,
@@ -317,8 +301,6 @@ fn record_driver(
     }
 }
 
-// ---- Setup + spawn -------------------------------------------------------
-
 fn setup(mut commands: Commands, mut browser: ResMut<Browser>, asset_server: Res<AssetServer>) {
     commands.spawn((
         Camera2d,
@@ -363,8 +345,6 @@ fn spawn_current_rig(commands: &mut Commands, browser: &mut Browser, asset_serve
     browser.skins.clear();
 }
 
-// ---- Input ---------------------------------------------------------------
-
 fn handle_input(
     mut commands: Commands,
     mut browser: ResMut<Browser>,
@@ -380,7 +360,6 @@ fn handle_input(
 
     let shift = keys.pressed(KeyCode::ShiftLeft) || keys.pressed(KeyCode::ShiftRight);
 
-    // Rig cycling.
     if keys.just_pressed(KeyCode::Space) {
         let n = browser.rigs.len();
         browser.current_rig = if shift {
@@ -394,7 +373,6 @@ fn handle_input(
         return;
     }
 
-    // Animation cycling — needs the skeleton to be initialised.
     if keys.just_pressed(KeyCode::KeyN) && !browser.animations.is_empty() {
         let n = browser.animations.len();
         browser.current_animation = if shift {
@@ -411,7 +389,6 @@ fn handle_input(
         return;
     }
 
-    // Skin cycling.
     if keys.just_pressed(KeyCode::KeyS) && !browser.skins.is_empty() {
         let n = browser.skins.len();
         browser.current_skin = if shift {
@@ -426,8 +403,8 @@ fn handle_input(
             if let Err(err) = sk.set_skin(skin.clone()) {
                 warn!("spine_browser: set_skin({skin:?}) failed: {err:?}");
             } else if !browser.animations.is_empty() {
-                // Re-trigger the current animation so the new skin's
-                // attachments end up in their animated state, not setup.
+                // `set_skin` resets slots to the setup pose; replaying
+                // restores the animated attachments.
                 let anim = browser.animations[browser.current_animation].clone();
                 sk.play(0, anim, true);
             }
@@ -435,7 +412,6 @@ fn handle_input(
         return;
     }
 
-    // Reset current animation.
     if keys.just_pressed(KeyCode::KeyR)
         && let Some(entity) = browser.skeleton_entity
         && let Ok(mut sk) = sk_query.get_mut(entity)
@@ -446,9 +422,7 @@ fn handle_input(
         return;
     }
 
-    // Time-scale tweaks. NumpadAdd / NumpadSubtract cover keyboards without
-    // bare +/- keys; the un-shifted Equal key reads as '=' and is treated
-    // as +. Minus is the dash key.
+    // `=` is unshifted `+` on most layouts.
     let inc = keys.just_pressed(KeyCode::NumpadAdd) || keys.just_pressed(KeyCode::Equal);
     let dec = keys.just_pressed(KeyCode::NumpadSubtract) || keys.just_pressed(KeyCode::Minus);
     if inc {
@@ -468,8 +442,6 @@ fn push_time_scale(browser: &Browser, sk_query: &mut Query<&mut SpineSkeleton>) 
     }
 }
 
-// ---- Metadata refresh ----------------------------------------------------
-
 fn refresh_metadata(mut browser: ResMut<Browser>, mut sk_query: Query<&mut SpineSkeleton>) {
     if !browser.metadata_dirty {
         return;
@@ -487,8 +459,6 @@ fn refresh_metadata(mut browser: ResMut<Browser>, mut sk_query: Query<&mut Spine
     let anims: Vec<String> = anims.iter().map(|s| (*s).to_string()).collect();
     let skins: Vec<String> = skins.iter().map(|s| (*s).to_string()).collect();
 
-    // Honor `--anim` / `--skin` on first metadata refresh; fall back to
-    // index-0 if the requested name doesn't exist on the loaded rig.
     if let Some(want) = browser.initial_anim.take()
         && let Some(idx) = anims.iter().position(|n| n == &want)
     {
@@ -511,7 +481,6 @@ fn refresh_metadata(mut browser: ResMut<Browser>, mut sk_query: Query<&mut Spine
         warn!("spine_browser: initial set_skin({skin:?}) failed: {err:?}");
     }
 
-    // Auto-play the chosen animation so the rig is moving when it appears.
     if let Some(anim) = anims.get(browser.current_animation).cloned() {
         sk.play(0, anim, true);
     }
@@ -520,8 +489,6 @@ fn refresh_metadata(mut browser: ResMut<Browser>, mut sk_query: Query<&mut Spine
     browser.skins = skins;
 }
 
-// ---- Live-fit camera -----------------------------------------------------
-
 fn live_fit_camera(
     time: Res<Time>,
     mut browser: ResMut<Browser>,
@@ -529,7 +496,6 @@ fn live_fit_camera(
     windows: Query<&Window>,
     mut camera_q: Query<(&mut Transform, &mut Projection), With<Camera2d>>,
 ) {
-    // Update target from this frame's render commands, if available.
     if let Some(entity) = browser.skeleton_entity
         && let Ok(sk) = sk_query.get(entity)
         && let Some(state) = &sk.state
@@ -537,9 +503,7 @@ fn live_fit_camera(
     {
         let center = (min + max) * 0.5;
         let height = ((max.y - min.y) * VIEW_MARGIN).max(MIN_VIEW_HEIGHT);
-        // Account for window aspect: when a rig is wider than tall,
-        // bumping height by the inverse aspect keeps it horizontally
-        // in-frame too.
+        // Grow the height enough to fit a wide rig horizontally.
         let aspect = windows
             .iter()
             .next()
@@ -551,7 +515,7 @@ fn live_fit_camera(
         };
     }
 
-    // Smooth current toward target.
+    // Frame-rate independent easing; the clamp stops a long stall from snapping.
     let dt = time.delta_secs().clamp(0.0, 1.0 / 30.0);
     let alpha = 1.0 - (1.0 - VIEW_LERP).powf(dt * 60.0);
     browser.current_view.center = browser
@@ -564,15 +528,11 @@ fn live_fit_camera(
         alpha,
     );
 
-    // Apply to the camera.
     let view = browser.current_view;
     if let Ok((mut transform, mut projection)) = camera_q.single_mut() {
         transform.translation.x = view.center.x;
         transform.translation.y = view.center.y;
         if let Projection::Orthographic(ortho) = &mut *projection {
-            // ScalingMode::FixedVertical maps the projection's vertical
-            // span to `view.height` world units, regardless of window
-            // size. Width auto-fits the aspect.
             ortho.scaling_mode = bevy::camera::ScalingMode::FixedVertical {
                 viewport_height: view.height,
             };
@@ -584,8 +544,6 @@ fn live_fit_camera(
 fn lerp_f32(a: f32, b: f32, t: f32) -> f32 {
     a + (b - a) * t
 }
-
-// ---- HUD -----------------------------------------------------------------
 
 fn update_hud(browser: Res<Browser>, mut text_q: Query<&mut Text, With<HudText>>) {
     let Ok(mut text) = text_q.single_mut() else {

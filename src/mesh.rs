@@ -10,26 +10,14 @@ use crate::asset::SpineAtlasAsset;
 use crate::components::{SpineRender2d, SpineRender3d, SpineSkeleton, SpineSkeletonState};
 use crate::material::{SpineBlendMode, SpineColors, SpineMaterial, SpineMaterial3d};
 
-/// Small per-command Z offset applied to child mesh transforms. The 2D
-/// pipeline's `Transparent2d` phase sorts by z, preserving the runtime's
-/// back-to-front command order. The 3D pipeline's `Transparent3d` phase
-/// sorts by camera distance, so this offset still separates slots along
-/// the skeleton's local Z axis — depth writes are disabled in
-/// [`SpineMaterial3d::specialize`] to avoid z-fighting between slots.
+/// Local Z step per render command, so the transparent phases (sorted by z in
+/// 2D, by camera distance in 3D) keep the runtime's back-to-front order.
 const Z_OFFSET_PER_COMMAND: f32 = 0.001;
 
-/// (Re)builds Bevy meshes + materials for every initialized 2D skeleton
-/// each frame. Filters on [`SpineRender2d`] so the 3D sibling
-/// ([`build_spine_meshes_3d`]) operates on disjoint entities. Runs in
-/// [`crate::SpineSet::BuildMeshes`], after the tick stage populated
-/// `SkeletonRenderer`'s internal command buffer.
-///
-/// Per-skeleton state holds index-parallel vecs of child entities,
-/// `Mesh` handles, and `SpineMaterial` handles — one entry per
-/// `RenderCommand` slot. Mesh attribute buffers are reused across frames;
-/// new child entities are spawned only when the command count grows;
-/// children past the current command count are hidden rather than
-/// despawned so subsequent growth reuses them.
+/// Writes each [`SpineRender2d`] skeleton's render commands into one child
+/// `Mesh2d` + [`SpineMaterial`] per command. Children are spawned only when
+/// the command count grows; extras are hidden. Skips skeletons whose asset
+/// or atlas isn't loaded.
 pub fn build_spine_meshes(
     mut commands: Commands,
     mut query: Query<(Entity, &mut SpineSkeleton), With<SpineRender2d>>,
@@ -89,12 +77,9 @@ pub fn build_spine_meshes(
     }
 }
 
-/// 3D sibling of [`build_spine_meshes`]. Filters on [`SpineRender3d`] and
-/// spawns child entities with `(Mesh3d, MeshMaterial3d<SpineMaterial3d>)`
-/// instead of the `Mesh2d` / `MeshMaterial2d` pair. The mesh-write path
-/// (positions / UVs / indices) is identical — Spine runtime positions are
-/// 2D, laid out as `(x, y, 0)` in the skeleton's local XY plane. Rotate
-/// the entity's `Transform` to place the skeleton upright in a 3D scene.
+/// [`build_spine_meshes`] for [`SpineRender3d`] skeletons: children carry
+/// `Mesh3d` + [`SpineMaterial3d`]. Vertices are `(x, y, 0)` in the entity's
+/// local space.
 pub fn build_spine_meshes_3d(
     mut commands: Commands,
     mut query: Query<(Entity, &mut SpineSkeleton), With<SpineRender3d>>,
@@ -154,9 +139,6 @@ pub fn build_spine_meshes_3d(
     }
 }
 
-/// Ensure `state.meshes` / `state.materials` / `state.children` have at
-/// least `cmd_count` entries, spawning new 2D child entities for any new
-/// slots. Existing slots are left alone.
 fn grow_child_buffers_2d(
     commands: &mut Commands,
     parent: Entity,
@@ -185,9 +167,6 @@ fn grow_child_buffers_2d(
     }
 }
 
-/// 3D sibling of [`grow_child_buffers_2d`]. Spawns children with
-/// `(Mesh3d, MeshMaterial3d<SpineMaterial3d>)` and populates the
-/// `materials_3d` vec.
 fn grow_child_buffers_3d(
     commands: &mut Commands,
     parent: Entity,
@@ -232,16 +211,11 @@ fn colors_from_command(cmd: &RenderCommand) -> SpineColors {
     }
 }
 
-/// Convert a [`RenderCommand`]'s interleaved position/uv buffers + index
-/// list into mesh attributes, reusing the mesh's existing storage when
-/// possible. The first call on a fresh `Mesh` falls through to
-/// `insert_attribute` / `insert_indices`; subsequent calls clear and
-/// extend the same `Vec`s in place, so steady-state per-frame work is
-/// just two `Vec::extend` plus one `Vec::extend_from_slice`.
+/// Copies a command's positions, UVs and indices into `mesh`, reusing its
+/// attribute buffers after the first call.
 pub(crate) fn write_mesh_from_command(mesh: &mut Mesh, cmd: &RenderCommand) {
     let n = cmd.num_vertices();
 
-    // Positions.
     if let Some(VertexAttributeValues::Float32x3(buf)) =
         mesh.attribute_mut(Mesh::ATTRIBUTE_POSITION)
     {
@@ -254,7 +228,6 @@ pub(crate) fn write_mesh_from_command(mesh: &mut Mesh, cmd: &RenderCommand) {
         mesh.insert_attribute(Mesh::ATTRIBUTE_POSITION, positions);
     }
 
-    // UVs.
     if let Some(VertexAttributeValues::Float32x2(buf)) = mesh.attribute_mut(Mesh::ATTRIBUTE_UV_0) {
         buf.clear();
         buf.extend((0..n).map(|i| [cmd.uvs[i * 2], cmd.uvs[i * 2 + 1]]));
@@ -265,7 +238,6 @@ pub(crate) fn write_mesh_from_command(mesh: &mut Mesh, cmd: &RenderCommand) {
         mesh.insert_attribute(Mesh::ATTRIBUTE_UV_0, uvs);
     }
 
-    // Indices.
     if let Some(Indices::U16(buf)) = mesh.indices_mut() {
         buf.clear();
         buf.extend_from_slice(&cmd.indices);
@@ -274,9 +246,7 @@ pub(crate) fn write_mesh_from_command(mesh: &mut Mesh, cmd: &RenderCommand) {
     }
 }
 
-/// Unpack a spine-runtime `0xAARRGGBB` color into a `[0..1]^4` RGBA Vec4.
-/// The light-color channel is already pre-multiplied by alpha on the CPU
-/// side (see `pack_color` in `spine_runtime::render`).
+/// Unpacks `0xAARRGGBB` into RGBA in `0..=1`. No alpha premultiplication.
 pub(crate) fn unpack_argb(v: u32) -> Vec4 {
     let a = ((v >> 24) & 0xff) as f32 / 255.0;
     let r = ((v >> 16) & 0xff) as f32 / 255.0;
@@ -296,9 +266,7 @@ mod tests {
 
     #[test]
     fn unpacks_red_half_alpha_matches_runtime_pack() {
-        // Runtime packs `pack_color(1, 0, 0, 0.5) == 0x7fff_0000`; 0.5 * 255
-        // truncates to 127 = 0x7f on the C++ side, so the round trip is
-        // 127/255 = 0.4980...
+        // The runtime packs alpha 0.5 as 0x7f (truncated, like spine-cpp).
         let v = unpack_argb(0x7fff_0000);
         assert!((v.x - 1.0).abs() < 1e-6);
         assert!(v.y.abs() < 1e-6);

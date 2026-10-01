@@ -1,7 +1,5 @@
-// Mesh2d-compatible shader for spine_bevy. Per-material uniform carries
-// the slot's premultiplied light color and its tint-black dark color; the
-// runtime batcher guarantees every vertex in one RenderCommand shares the
-// same colors, so we pass them as uniforms rather than per-vertex attributes.
+// Colors are a per-material uniform rather than vertex attributes: with
+// default render options, every vertex of a RenderCommand shares them.
 
 #import bevy_sprite::{
     mesh2d_functions as mesh_functions,
@@ -38,10 +36,8 @@ fn vertex(v: Vertex) -> VertexOutput {
 @fragment
 fn fragment(in: VertexOutput) -> @location(0) vec4<f32> {
     let sample = textureSample(spine_texture, spine_sampler, in.uv);
-    // Spine tint-black: ((sample.rgb - 1) * dark.rgb + sample.rgb) * light.rgb
-    // Atlases are PMA, so `sample.rgb` is already pre-multiplied by `sample.a`.
-    // `colors.light` is also pre-multiplied by `colors.light.a` on the CPU
-    // side (the spine runtime packs it this way).
+    // Tint-black over a PMA sample. `colors.light` is straight alpha, so
+    // `light.a` scales only the output alpha.
     let rgb = ((sample.rgb - vec3<f32>(1.0)) * colors.dark.rgb + sample.rgb) * colors.light.rgb;
     let a = sample.a * colors.light.a;
     return vec4<f32>(rgb, a);

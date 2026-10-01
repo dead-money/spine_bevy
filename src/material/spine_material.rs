@@ -9,29 +9,21 @@ use bevy::sprite_render::{AlphaMode2d, Material2d, Material2dKey};
 
 use crate::material::shared::{SpineBlendMode, SpineColors, SpineMaterialKey};
 
-/// 2D material emitted by [`crate::mesh`] for each batched `RenderCommand`
-/// on entities tagged with [`crate::components::SpineRender2d`]. Pairs an
-/// atlas-page texture with the slot's premultiplied colors and a blend
-/// mode.
-///
-/// `blend_mode` is promoted into [`SpineMaterialKey`] so the
-/// `Material2d` pipeline specializer caches one pipeline per mode (four
-/// permutations total).
+/// 2D material for one render command of a
+/// [`SpineRender2d`](crate::SpineRender2d) skeleton. Expects a
+/// premultiplied-alpha atlas page.
 #[derive(Asset, AsBindGroup, TypePath, Clone, Debug)]
 #[bind_group_data(SpineMaterialKey)]
 pub struct SpineMaterial {
-    /// Per-slot light + dark tint, shared across every vertex of one
-    /// command (the runtime's adjacency batcher only merges commands
-    /// with identical colors).
+    /// The command's colors. Uniform per command because the runtime's
+    /// default render options only batch slots with identical colors.
     #[uniform(0)]
     pub colors: SpineColors,
-    /// Atlas page the command samples from. Resolved by the mesh-build
-    /// system from `SpineAtlasAsset::pages` keyed by `RenderCommand::texture`.
+    /// The command's atlas page, from `SpineAtlasAsset::pages`.
     #[texture(1)]
     #[sampler(2)]
     pub texture: Handle<Image>,
-    /// Spine blend mode. Not a bind-group field — copied into
-    /// [`SpineMaterialKey`] for pipeline specialization.
+    /// Selects the pipeline through [`SpineMaterialKey`]; not bound.
     pub blend_mode: SpineBlendMode,
 }
 
@@ -83,11 +75,7 @@ impl Material2d for SpineMaterial {
     }
 }
 
-/// Register the 2D WGSL shader with Bevy's embedded asset source. Called by
-/// [`crate::SpinePlugin`] during `build`. Downstream, `Material2d::fragment_shader`
-/// returns the `embedded://...` path and the asset server resolves it
-/// lazily — so this registration doesn't require any render plugins to be
-/// installed yet.
+/// Embeds `spine.wgsl`. Needs no render plugins installed yet.
 pub(crate) fn register_spine_shader(app: &mut App) {
     embedded_asset!(app, "spine.wgsl");
 }

@@ -26,44 +26,41 @@
 //!
 //! # Quick start (3D)
 //!
-//! Opt into the 3D pipeline by spawning a [`SpineRender3d`] marker
-//! alongside the [`SpineSkeleton`]; use a `Camera3d` instead of `Camera2d`.
-//! Positions emitted by the Spine runtime are 2D — the 3D backend lays
-//! them out in the skeleton's local XY plane (z = 0), so rotate the
-//! entity's `Transform` to stand the rig upright in a 3D scene. See
-//! `examples/spineboy_walk_3d.rs` for a complete example.
+//! Spawn a [`SpineRender3d`] marker alongside the [`SpineSkeleton`] and use a
+//! `Camera3d`. The rig is laid out in the entity's local XY plane (z = 0);
+//! rotate the entity's `Transform` to stand it upright. See
+//! `examples/spineboy_walk_3d.rs`.
 //!
 //! # How it fits together
 //!
-//! [`SpinePlugin`] registers asset loaders, both the [`SpineMaterial`]
-//! (`Material2d`) and [`SpineMaterial3d`] (`Material`) material plugins,
-//! two `Message` types for animation events, and five ordered system
-//! stages:
+//! [`SpinePlugin`] registers the asset loaders, the [`SpineMaterial`]
+//! (`Material2d`) and [`SpineMaterial3d`] (`Material`) plugins, two
+//! `Message` types for animation events, and five chained system sets in
+//! `Update`:
 //!
-//! 1. [`SpineSet::EnsureMarkers`] — backfills [`SpineRender2d`] on any
-//!    skeleton entity that doesn't carry a render-mode marker.
-//! 2. [`SpineSet::Init`] — observes assets that finished loading and
-//!    builds the per-instance runtime state.
-//! 3. [`SpineSet::Tick`] — advances animation time, applies timelines,
-//!    re-integrates world transforms, emits the per-frame
-//!    `RenderCommand` stream into each skeleton's renderer. Parallel
-//!    over skeletons.
-//! 4. [`SpineSet::BuildMeshes`] — converts that command stream into
-//!    Bevy `Mesh` + `MeshMaterial2d<SpineMaterial>` (or
-//!    `MeshMaterial3d<SpineMaterial3d>`) children, depending on which
-//!    render-mode marker the parent carries.
-//! 5. [`SpineSet::Events`] — drains lifecycle + keyframe events into
-//!    [`SpineStateEvent`] / [`SpineKeyframeEvent`] writers.
+//! 1. [`SpineSet::EnsureMarkers`]: inserts [`SpineRender2d`] on skeletons
+//!    that carry no render-mode marker.
+//! 2. [`SpineSet::Init`]: builds runtime state for skeletons whose asset
+//!    has loaded.
+//! 3. [`SpineSet::Tick`]: advances and applies animations, updates world
+//!    transforms, and renders each skeleton's `RenderCommand` list. Runs in
+//!    parallel over skeletons.
+//! 4. [`SpineSet::BuildMeshes`]: writes those commands into child mesh
+//!    entities with a [`SpineMaterial`] or [`SpineMaterial3d`], depending on
+//!    the render-mode marker.
+//! 5. [`SpineSet::Events`]: forwards lifecycle and keyframe events as
+//!    [`SpineStateEvent`] and [`SpineKeyframeEvent`] messages.
 //!
-//! User systems can `.before(SpineSet::Tick)` to mutate `time_scale` or
-//! queue animations on the same frame they take effect.
+//! Systems ordered `.before(SpineSet::Tick)` can change `time_scale` or
+//! queue animations and see the result the same frame.
 //!
 //! # Atlas expectations
 //!
-//! The shipped materials assume premultiplied-alpha textures. Spine
-//! exports usually ship `*-pma.atlas` / `*-pma.png` variants alongside
-//! straight-alpha pairs; prefer the PMA variant via
-//! [`SpineSkeletonLoaderSettings::atlas_path`].
+//! The materials assume premultiplied-alpha textures. Spine exports usually
+//! include a `*-pma.atlas` / `*-pma.png` pair beside the straight-alpha one.
+//! The loaders derive `spineboy.atlas` from `spineboy-pro.skel`, which in
+//! Spine's examples is the straight-alpha atlas; set
+//! [`SpineSkeletonLoaderSettings::atlas_path`] to the PMA variant.
 //!
 //! [`spine_runtime`]: https://github.com/dead-money/spine_runtime
 
@@ -93,8 +90,8 @@ pub use systems::{
     ensure_spine_render_marker, initialize_spine_skeletons, tick_spine_skeletons,
 };
 
-/// Bevy plugin entry point. Register once during `App` setup; spawns
-/// [`SpineSkeleton`] components afterward to bring rigs to life.
+/// Registers Spine assets, materials, messages and systems. Add once, then
+/// spawn [`SpineSkeleton`] components.
 #[derive(Default)]
 pub struct SpinePlugin;
 
