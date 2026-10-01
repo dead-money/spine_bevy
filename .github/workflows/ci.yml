@@ -50,8 +50,8 @@ jobs:
           path: spine_runtime
           ref: ${{ steps.runtime_ref.outputs.ref }}
 
-      # The examples' rigs. `cargo test` only builds the examples, so
-      # nothing in this workflow reads them yet.
+      # The examples' rigs. `cargo test` only builds the examples, so no
+      # step here reads them.
       - name: Checkout spine-runtimes (upstream)
         uses: actions/checkout@v6
         with:

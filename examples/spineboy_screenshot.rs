@@ -8,7 +8,8 @@
 //!
 //! Environment:
 //! - `SPINE_SCREENSHOT`: output PNG path (default `spineboy_screenshot.png`).
-//! - `SPINE_SCREENSHOT_FRAMES`: frame to capture on (default `60`).
+//! - `SPINE_SCREENSHOT_FRAMES`: frame to capture on (default `60`). Read only
+//!   when `SPINE_SCREENSHOT` is set.
 
 use bevy::asset::AssetPlugin;
 use bevy::prelude::*;

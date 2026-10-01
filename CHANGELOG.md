@@ -6,6 +6,10 @@ pre-1.0, any `0.x` release may contain breaking changes.
 
 ## [Unreleased]
 
+### Changed
+
+- Refreshed the API docs and README.
+
 ## [0.2.1] - 2026-10-01
 
 ### Fixed

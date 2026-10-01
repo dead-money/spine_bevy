@@ -1,3 +1,8 @@
+//! Turns each skeleton's render commands into child mesh entities.
+//!
+//! Each render command gets one child entity with its own mesh and material,
+//! reused across frames.
+
 use bevy::asset::RenderAssetUsages;
 use bevy::mesh::{Indices, Mesh3d, PrimitiveTopology, VertexAttributeValues};
 use bevy::pbr::MeshMaterial3d;

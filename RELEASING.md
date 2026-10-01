@@ -2,10 +2,11 @@
 
 ## CI
 
-`ci.yml` runs fmt, clippy, test, and rustdoc (`-D warnings`) on hosted runners
-for every push to `main` and every PR. It checks out `spine_runtime` beside this
-repo (the branch with the same name if one exists, else `main`) and the pinned
-`spine-runtimes` commit; bump that pin together with `spine_runtime`'s.
+`ci.yml` runs fmt, clippy, test, and rustdoc (`-D warnings`) for every push to
+`main` and every PR. It checks out `spine_runtime` beside this repo (on a PR,
+the `spine_runtime` branch with the same name if one exists; otherwise `main`)
+and the pinned `spine-runtimes` commit. Bump that pin together with
+`spine_runtime`'s.
 
 CI doesn't run `cargo package`, which builds against the `spine_runtime` on
 crates.io and would fail any change that needs unreleased runtime API.
@@ -16,13 +17,14 @@ Bevy needs.
 
 ## Cutting a release
 
-Publish any `spine_runtime` version this release needs first. Then, with
+Publish any `spine_runtime` version this release needs first, and point the
+`spine_runtime` dependency's `version` in `Cargo.toml` at it. Then, with
 [cargo-release](https://github.com/crate-ci/cargo-release) installed, `main`
 clean, and CI green:
 
 ```sh
-cargo release minor --dry-run
-cargo release minor --execute
+cargo release patch --dry-run   # or minor
+cargo release patch --execute
 ```
 
 It bumps the version, stamps `CHANGELOG.md`, commits, tags `vX.Y.Z`, and

@@ -27,6 +27,14 @@
 //! Other flags: `--rig <substring>`, `--anim <name>`, `--skin <name>`, and
 //! `--width <px> --height <px>` for a fixed window size.
 //!
+//! ## Capture
+//!
+//! - `SPINE_BROWSER_SCREENSHOT=<png>`: save one frame and exit. The frame is
+//!   `SPINE_BROWSER_SCREENSHOT_FRAMES` (default 120).
+//! - `SPINE_BROWSER_RECORD_DIR=<dir>`: write `frame_NNNN.png` for
+//!   `SPINE_BROWSER_RECORD_FRAMES` frames (default 90) after
+//!   `SPINE_BROWSER_RECORD_WARMUP` frames (default 30), then exit.
+//!
 //! [`EsotericSoftware/spine-runtimes`]: https://github.com/EsotericSoftware/spine-runtimes
 
 use std::path::PathBuf;

@@ -1,3 +1,5 @@
+//! The `.atlas` loader.
+
 use std::sync::Arc;
 
 use bevy::asset::{AssetLoader, LoadContext, io::Reader};
@@ -17,9 +19,13 @@ pub struct SpineAtlasAsset {
 }
 
 /// Loads `.atlas` files and each page image, resolved relative to the atlas.
+/// Images load as ordinary `Image` assets, so the `ImagePlugin` sampler
+/// applies.
 #[derive(Default, TypePath)]
 pub struct SpineAtlasLoader;
 
+/// Why [`SpineAtlasLoader`] failed. Page images load asynchronously and
+/// report their own errors.
 #[derive(Debug, Error)]
 pub enum SpineAtlasLoaderError {
     #[error("io error: {0}")]

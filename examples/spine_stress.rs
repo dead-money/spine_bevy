@@ -17,7 +17,7 @@
 //! - `--count <N>`: initial skeleton count (default 1).
 //! - `--csv <path>`: write a `frame,count,fps,tick_ms,build_ms` row per
 //!   frame. Values are the smoothed diagnostics.
-//! - `--width <w>` / `--height <h>`: window resolution.
+//! - `--width <w>` / `--height <h>`: window resolution; needs both.
 //! - `--assets <path>` / `SPINE_EXAMPLES_DIR`: asset root, as in
 //!   `spine_browser`.
 //!

@@ -14,7 +14,7 @@ From `cargo run --release --example spine_stress -- --csv stress.csv` at perfect
 | 500  | 0.93 ms  | 0.46 ms  | 1.39 ms     | 15.28 ms           | 156  | render extract + draw calls         |
 | 1000 | 1.72 ms  | 1.03 ms  | 2.75 ms     | 13.92 ms           | 84   | render extract + draw calls         |
 
-The drop above about 500 instances is not Spine CPU work, which stays under 3 ms at 1000. The rest of the 16.67 ms frame goes to everything after `SpineSet::BuildMeshes`: extracting 1000 mesh assets, a bind-group switch per material (each skeleton owns one material per render command), and 1000+ draw calls.
+The FPS drop above about 500 instances is not Spine CPU work, which stays under 3 ms at 1000. The rest of the 16.67 ms frame goes to everything after `SpineSet::BuildMeshes`: extracting 1000 mesh assets, a bind-group switch per material (each skeleton owns one material per render command), and 1000+ draw calls.
 
 ## Before optimizing
 
@@ -53,9 +53,9 @@ Only if the above isn't enough.
 3. Shared materials (#5), the cheapest likely win.
 4. Stop unless a real scene still misses the target.
 
-## Already done
+## Current design
 
-- `tick_spine_skeletons` runs skeletons in parallel with `par_iter_mut`: total Spine cost at N=1000 went from 10.4 ms to 2.7 ms.
+- `tick_spine_skeletons` runs skeletons in parallel with `par_iter_mut`.
 - Initialized skeletons carry `SpineInitialized`, so the init system skips them.
 - `write_mesh_from_command` rewrites mesh attributes in place instead of allocating new buffers each frame.
-- The runtime batches adjacent commands with the same texture, blend mode, and color. Spineboy draws as one command.
+- The runtime batches adjacent attachments with the same texture, blend mode, and color into one command. Spineboy draws as one command.
