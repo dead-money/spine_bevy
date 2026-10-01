@@ -57,12 +57,12 @@ fn main() {
 fn setup(mut commands: Commands, asset_server: Res<AssetServer>) {
     commands.spawn((Camera2d, Transform::from_xyz(0.0, 200.0, 0.0)));
 
-    let skel_handle: Handle<SpineSkeletonAsset> = asset_server.load_with_settings(
-        "spineboy/export/spineboy-pro.skel",
-        |settings: &mut SpineSkeletonLoaderSettings| {
+    let skel_handle: Handle<SpineSkeletonAsset> = asset_server
+        .load_builder()
+        .with_settings(|settings: &mut SpineSkeletonLoaderSettings| {
             settings.atlas_path = Some("spineboy/export/spineboy-pma.atlas".to_string());
-        },
-    );
+        })
+        .load("spineboy/export/spineboy-pro.skel");
 
     commands.spawn((
         SpineSkeleton::new(skel_handle).with_initial_animation(0, "walk", true),

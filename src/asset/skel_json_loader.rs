@@ -99,9 +99,8 @@ impl AssetLoader for SpineSkeletonJsonLoader {
         let atlas_handle: Handle<SpineAtlasAsset> = load_context.load(atlas_path.clone());
 
         let loaded_atlas = load_context
-            .loader()
-            .immediate()
-            .load::<SpineAtlasAsset>(atlas_path.clone())
+            .load_builder()
+            .load_value::<SpineAtlasAsset>(atlas_path.clone())
             .await
             .map_err(|e| {
                 SpineSkeletonJsonLoaderError::AtlasLoad(atlas_path.to_string(), e.to_string())

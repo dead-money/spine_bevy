@@ -96,9 +96,9 @@ pub fn build_spine_meshes(
                 .unwrap_or_default();
 
             if let Some(mesh) = meshes.get_mut(&state.meshes[i]) {
-                write_mesh_from_command(mesh, cmd);
+                write_mesh_from_command(mesh.into_inner(), cmd);
             }
-            if let Some(mat) = materials.get_mut(&state.materials[i]) {
+            if let Some(mut mat) = materials.get_mut(&state.materials[i]) {
                 mat.texture = tex;
                 mat.colors = colors_from_command(cmd);
                 mat.blend_mode = SpineBlendMode::from(cmd.blend_mode);
@@ -161,9 +161,9 @@ pub fn build_spine_meshes_3d(
                 .unwrap_or_default();
 
             if let Some(mesh) = meshes.get_mut(&state.meshes[i]) {
-                write_mesh_from_command(mesh, cmd);
+                write_mesh_from_command(mesh.into_inner(), cmd);
             }
-            if let Some(mat) = materials.get_mut(&state.materials_3d[i]) {
+            if let Some(mut mat) = materials.get_mut(&state.materials_3d[i]) {
                 mat.texture = tex;
                 mat.colors = colors_from_command(cmd);
                 mat.blend_mode = SpineBlendMode::from(cmd.blend_mode);

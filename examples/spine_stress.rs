@@ -298,7 +298,7 @@ fn setup(mut commands: Commands) {
         HudText,
         Text::new("warming up…"),
         TextFont {
-            font_size: 16.0,
+            font_size: FontSize::Px(16.0),
             ..default()
         },
         TextColor(Color::WHITE),
@@ -455,12 +455,12 @@ fn spawn_one(
     pos: Vec2,
 ) {
     let atlas = cfg.rig.atlas_relpath.clone();
-    let handle: Handle<SpineSkeletonAsset> = asset_server.load_with_settings(
-        cfg.rig.skel_relpath.clone(),
-        move |s: &mut SpineSkeletonLoaderSettings| {
+    let handle: Handle<SpineSkeletonAsset> = asset_server
+        .load_builder()
+        .with_settings(move |s: &mut SpineSkeletonLoaderSettings| {
             s.atlas_path = Some(atlas.clone());
-        },
-    );
+        })
+        .load(cfg.rig.skel_relpath.clone());
     let mut sk = SpineSkeleton::new(handle);
     sk.physics = Physics::Update;
     if let Some(name) = &cfg.anim_override {

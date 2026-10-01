@@ -66,7 +66,7 @@ pub(crate) fn derive_atlas_path(
         .unwrap_or(stem);
 
     let atlas_name = format!("{base}.atlas");
-    Ok(skel_path.resolve_embed(&atlas_name)?)
+    Ok(skel_path.resolve_embed_str(&atlas_name)?)
 }
 
 #[derive(Debug, Error)]

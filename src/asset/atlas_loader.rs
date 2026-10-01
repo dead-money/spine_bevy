@@ -86,7 +86,7 @@ impl AssetLoader for SpineAtlasLoader {
         let base_path = load_context.path().clone();
         for page in &atlas.pages {
             let png_path = base_path
-                .resolve_embed(&page.name)
+                .resolve_embed_str(&page.name)
                 .unwrap_or_else(|_| base_path.clone());
             let handle: Handle<Image> = load_context.load(png_path);
             pages.push(handle);
