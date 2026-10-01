@@ -2,11 +2,11 @@
 name = "spine_bevy"
 version = "0.1.0"
 edition = "2024"
-description = "Bevy 0.18 integration for spine_runtime."
+description = "Bevy 0.19 integration for spine_runtime."
 license-file = "LICENSE"
 
 [dependencies]
-bevy = "0.18.1"
+bevy = "0.19"
 spine_runtime = { path = "../spine_runtime" }
 serde = { version = "1", features = ["derive"] }
 thiserror = "2"

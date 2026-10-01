@@ -71,12 +71,12 @@ fn setup(mut commands: Commands, asset_server: Res<AssetServer>) {
     // Override the atlas path to the PMA variant — the shader assumes
     // premultiplied-alpha textures, which the stock `spineboy.atlas` is
     // not. `-pma.png` ships pre-multiplied.
-    let skel_handle: Handle<SpineSkeletonAsset> = asset_server.load_with_settings(
-        "spineboy/export/spineboy-pro.skel",
-        |settings: &mut SpineSkeletonLoaderSettings| {
+    let skel_handle: Handle<SpineSkeletonAsset> = asset_server
+        .load_builder()
+        .with_settings(|settings: &mut SpineSkeletonLoaderSettings| {
             settings.atlas_path = Some("spineboy/export/spineboy-pma.atlas".to_string());
-        },
-    );
+        })
+        .load("spineboy/export/spineboy-pro.skel");
 
     commands.spawn((
         SpineSkeleton::new(skel_handle).with_initial_animation(0, "walk", true),

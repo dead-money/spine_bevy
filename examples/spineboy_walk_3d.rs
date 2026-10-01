@@ -121,7 +121,7 @@ fn setup(
     commands.spawn((
         DirectionalLight {
             illuminance: 6_000.0,
-            shadows_enabled: false,
+            shadow_maps_enabled: false,
             ..default()
         },
         Transform::from_xyz(4.0, 8.0, 4.0).looking_at(Vec3::ZERO, Vec3::Y),
@@ -141,12 +141,12 @@ fn setup(
     // Override the atlas path to the PMA variant — the shader assumes
     // premultiplied-alpha textures, which the stock `spineboy.atlas` is
     // not. `-pma.png` ships pre-multiplied.
-    let skel_handle: Handle<SpineSkeletonAsset> = asset_server.load_with_settings(
-        "spineboy/export/spineboy-pro.skel",
-        |settings: &mut SpineSkeletonLoaderSettings| {
+    let skel_handle: Handle<SpineSkeletonAsset> = asset_server
+        .load_builder()
+        .with_settings(|settings: &mut SpineSkeletonLoaderSettings| {
             settings.atlas_path = Some("spineboy/export/spineboy-pma.atlas".to_string());
-        },
-    );
+        })
+        .load("spineboy/export/spineboy-pro.skel");
 
     // The Spine runtime emits positions in the skeleton's local XY
     // plane. No extra rotation needed — the skeleton's +Y already points

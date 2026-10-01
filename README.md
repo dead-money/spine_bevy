@@ -2,7 +2,7 @@
 
 [![CI](https://github.com/dead-money/spine_bevy/actions/workflows/ci.yml/badge.svg)](https://github.com/dead-money/spine_bevy/actions/workflows/ci.yml)
 
-A Bevy 0.18 plugin that loads, animates, and draws [Spine](https://esotericsoftware.com/) 4.3 skeletons. Skeletons are entities; they render through Bevy's 2D sprite pipeline or its 3D pipeline, chosen per entity.
+A Bevy 0.19 plugin that loads, animates, and draws [Spine](https://esotericsoftware.com/) 4.3 skeletons. Skeletons are entities; they render through Bevy's 2D sprite pipeline or its 3D pipeline, chosen per entity.
 
 It builds on [`spine_runtime`](https://github.com/dead-money/spine_runtime), the renderer-agnostic Rust port of the Spine runtime. This crate maps that runtime's `RenderCommand` stream onto Bevy meshes and materials, and sets `unsafe_code = "forbid"`.
 
@@ -28,7 +28,7 @@ If your use case is in doubt, check the [Spine licensing page](https://esoterics
 
 ```toml
 [dependencies]
-bevy = "0.18"
+bevy = "0.19"
 spine_runtime = { git = "https://github.com/dead-money/spine_runtime" }
 spine_bevy = { git = "https://github.com/dead-money/spine_bevy" }
 ```
@@ -55,12 +55,12 @@ fn setup(mut commands: Commands, asset_server: Res<AssetServer>) {
     // Without settings, the loader derives the atlas path from the skeleton
     // stem (stripping -pro / -ess / -ios). Here we point it at the PMA atlas.
     // `.json` exports work the same way with SpineSkeletonJsonLoaderSettings.
-    let skel: Handle<SpineSkeletonAsset> = asset_server.load_with_settings(
-        "spineboy/export/spineboy-pro.skel",
-        |s: &mut SpineSkeletonLoaderSettings| {
+    let skel: Handle<SpineSkeletonAsset> = asset_server
+        .load_builder()
+        .with_settings(|s: &mut SpineSkeletonLoaderSettings| {
             s.atlas_path = Some("spineboy/export/spineboy-pma.atlas".into());
-        },
-    );
+        })
+        .load("spineboy/export/spineboy-pro.skel");
 
     commands.spawn(SpineSkeleton::new(skel).with_initial_animation(0, "walk", true));
 }
@@ -115,11 +115,13 @@ For a straight-alpha atlas, either point the loader at a PMA variant (as in the 
 
 ## Version compatibility
 
-| Bevy | Spine | spine_bevy |
-|------|-------|---------------|
-| 0.18 | 4.3   | `main`        |
+| Bevy | Spine | spine_bevy  |
+|------|-------|-------------|
+| 0.19 | 4.3   | `main`      |
+| 0.18 | 4.3   | `f2a00bb`   |
+| 0.18 | 4.2   | `8c7be8a`   |
 
-The crate pins a Bevy minor because the render path depends on `Material2d` / `Material` specialization and the `Mesh2d` / `Mesh3d` extraction model, which change between releases. For Spine 4.2, use the `v0.1.0` tag of `spine_runtime` with this crate at `8c7be8a`, the last 4.2 commit.
+The crate pins a Bevy minor because the render path depends on `Material2d` / `Material` specialization and the `Mesh2d` / `Mesh3d` extraction model, which change between releases. The 0.18 rows are the last commits on that Bevy version; pair the 4.2 one with `spine_runtime`'s `v0.1.0` tag.
 
 ## Building
 

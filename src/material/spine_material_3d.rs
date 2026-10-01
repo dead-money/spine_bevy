@@ -125,7 +125,7 @@ impl Material for SpineMaterial3d {
         // sort by camera distance and disable depth writes so slots layer
         // correctly regardless of submission order.
         if let Some(depth_stencil) = descriptor.depth_stencil.as_mut() {
-            depth_stencil.depth_write_enabled = false;
+            depth_stencil.depth_write_enabled = Some(false);
         }
         // Spine meshes are single-sided and can wind either way depending
         // on skeleton flips, skin swaps, and bone chains crossing over

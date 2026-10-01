@@ -25,7 +25,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
 // THE SPINE RUNTIMES, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-//! Bevy 0.18 integration for [`spine_runtime`].
+//! Bevy 0.19 integration for [`spine_runtime`].
 //!
 //! # Quick start (2D)
 //!

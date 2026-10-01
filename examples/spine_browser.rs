@@ -335,7 +335,7 @@ fn setup(mut commands: Commands, mut browser: ResMut<Browser>, asset_server: Res
         HudText,
         Text::new("loading…"),
         TextFont {
-            font_size: 16.0,
+            font_size: FontSize::Px(16.0),
             ..default()
         },
         TextColor(Color::WHITE),
@@ -355,12 +355,12 @@ fn spawn_current_rig(commands: &mut Commands, browser: &mut Browser, asset_serve
     }
     let rig = browser.rigs[browser.current_rig].clone();
     let atlas = rig.atlas_relpath.clone();
-    let handle: Handle<SpineSkeletonAsset> = asset_server.load_with_settings(
-        rig.skel_relpath.clone(),
-        move |s: &mut SpineSkeletonLoaderSettings| {
+    let handle: Handle<SpineSkeletonAsset> = asset_server
+        .load_builder()
+        .with_settings(move |s: &mut SpineSkeletonLoaderSettings| {
             s.atlas_path = Some(atlas.clone());
-        },
-    );
+        })
+        .load(rig.skel_relpath.clone());
     let mut sk = SpineSkeleton::new(handle);
     sk.time_scale = browser.time_scale;
     let entity = commands.spawn(sk).id();
