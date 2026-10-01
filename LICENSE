@@ -27,8 +27,11 @@ Note on the Spine Runtimes
 
 This crate depends on the `spine_runtime` crate, a port of Esoteric Software's
 spine-cpp that is distributed under the Spine Runtimes License Agreement, not
-under MIT. Software built with this crate includes `spine_runtime` and is bound
-by that license: every user of it needs their own Spine Editor license. See
-https://esotericsoftware.com/spine-runtimes-license.
+under MIT. Software built with this crate includes `spine_runtime`, so under
+Section 2 of the Spine Editor License Agreement, every developer who builds it
+needs their own Spine Editor license, and the Spine Runtimes License Agreement
+must be included with the resulting product. See
+https://esotericsoftware.com/spine-runtimes-license and
+https://esotericsoftware.com/spine-editor-license.
 
 The MIT terms above apply only to the source code in this repository.

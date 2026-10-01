@@ -15,12 +15,12 @@ Built for Dead Money's own games and mostly written by AI agents under human dir
 
 ## You need a Spine Editor license
 
-This crate's own code is MIT, but it depends on `spine_runtime`, a translation of Esoteric Software's `spine-cpp` distributed under the [Spine Runtimes License Agreement](https://esotericsoftware.com/spine-runtimes-license). Anything you build with this crate includes `spine_runtime`, so:
+This crate's own code is MIT, but it depends on `spine_runtime`, a translation of Esoteric Software's `spine-cpp` under the [Spine Runtimes License Agreement](https://esotericsoftware.com/spine-runtimes-license). Under Section 2 of the [Spine Editor License Agreement](https://esotericsoftware.com/spine-editor-license):
 
-- **Every end user of software built with this crate needs their own [Spine Editor license](https://esotericsoftware.com/spine-purchase).**
-- **Keep `spine_runtime`'s notices.** Its source files and `LICENSE` carry Esoteric Software's copyright and license, and both go with any redistribution.
+- **Every developer who builds software with this crate needs their own [Spine Editor license](https://esotericsoftware.com/spine-purchase),** including to build and run the examples. Players of a game you ship don't need one.
+- **Ship the license text.** Include the Spine Runtimes License Agreement in the documentation or other materials that come with your product.
 
-If you're unsure whether your use is covered, check the [Spine licensing page](https://esotericsoftware.com/spine-purchase) or ask Esoteric Software.
+If you're unsure whether your use is covered, ask Esoteric Software.
 
 This release reads **Spine 4.3** exports, binary (`.skel`) or JSON, each paired with its `.atlas`. 4.2 exports won't load; re-export them from a 4.3 editor.
 
